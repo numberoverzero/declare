@@ -226,10 +226,10 @@ def metadata_from_bases(bases):
     # Since None is the same as "don't copy this", use a sentinel to indicate
     # a missing attribute.  Stop walking up on None, not on missing
     for base in bases:
-        metadata = getattr(base, '__meta__', missing)
-        if metadata is not missing:
+        meta = getattr(base, '__meta__', missing)
+        if meta is not missing:
             try:
-                return metadata.copy()
+                return meta.copy()
             except AttributeError:
                 # Something without a copy method, such as None
                 # Don't copy, return a new dict
@@ -252,27 +252,27 @@ class ModelMetaclass(type, TypeDefinition):
     def __new__(metaclass, name, bases, attrs):
         """ Add an OrderedDict ``fields`` to __meta__ """
 
-        # Track metadata, either copying from bases or empty dict
+        # Track meta, either copying from bases or empty dict
         # -------------------------------------------------------
-        metadata = attrs.get('__meta__', missing)
-        if not isinstance(metadata, collections.MutableMapping):
+        meta = attrs.get('__meta__', missing)
+        if not isinstance(meta, collections.MutableMapping):
             # Try to find it in the class's parents
-            if metadata is missing:
-                metadata = metadata_from_bases(bases)
+            if meta is missing:
+                meta = metadata_from_bases(bases)
             # __meta__ was None or list or...
             # Don't blow it away, raise because we expected a dict-like obj
             else:
                 raise AttributeError("Expected __meta__ to be dict-like,"
-                                     + " got {} instead".format(metadata))
-        attrs['__meta__'] = metadata
+                                     + " got {} instead".format(meta))
+        attrs['__meta__'] = meta
 
         cls = super().__new__(metaclass, name, bases, attrs)
 
         # Load or create a unique namespace and engine
         # ------------------------------------------------
-        engine = metadata.get("type_engine", None)
-        engine_config = metadata.get("type_engine_config", {})
-        namespace = metadata.get("namespace", None)
+        engine = meta.get("type_engine", None)
+        engine_config = meta.get("type_engine_config", {})
+        namespace = meta.get("namespace", None)
         if (engine and namespace) and (engine.namespace != namespace):
             raise AttributeError("Model namespace is overdefined!")
         if engine:
@@ -283,9 +283,9 @@ class ModelMetaclass(type, TypeDefinition):
             # Neither defined, generate a unique namespace
             namespace = "{}-{}".format(name, uuid.uuid4())
             engine = TypeEngine(namespace)
-        metadata['namespace'] = namespace
-        metadata['type_engine'] = engine
-        metadata['type_engine_config'] = engine_config
+        meta['namespace'] = namespace
+        meta['type_engine'] = engine
+        meta['type_engine_config'] = engine_config
 
         # Load and index fields, register field typedefs with engine
         # ----------------------------------------------------------
@@ -297,8 +297,8 @@ class ModelMetaclass(type, TypeDefinition):
                 # This will raise AttributeError if the field's
                 # name is already set
                 attr.model_name = name
-        metadata['fields_by_model_name'] = index(fields, 'model_name')
-        metadata['fields'] = fields
+        meta['fields_by_model_name'] = index(fields, 'model_name')
+        meta['fields'] = fields
 
         # TypeEngine setup
         # ----------------
