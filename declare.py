@@ -8,6 +8,12 @@ _fixed_engines = collections.ChainMap()
 
 
 class TypeEngineMeta(type):
+    '''
+    Factory for :class:`~TypeEngine` so that each engine is init'd only once.
+
+    This is necessary since if :meth:`~TypeEngine.__new__` returns an instance
+    of the class, the :meth:`~TypeEngine.__init__` method will be called.
+    '''
     engines = _fixed_engines.new_child()
 
     def __call__(cls, namespace, *args, **kwargs):
@@ -25,20 +31,58 @@ class TypeEngineMeta(type):
 
 
 class TypeEngine(object, metaclass=TypeEngineMeta):
+    '''
+    Collection of bound :class:`~TypeDefinition`s for a given namespace.
 
-    def __init__(self, namespace, *args, **kwargs):
+    TypeEngines are unique by namespace::
+
+        assert TypeEngine("foo") is TypeEngine("foo")
+
+    This makes it easier for groups of components to use a single engine to
+    translate values by type.  By default :meth:`~TypeEngine.load` and
+    :meth:`~TypeEngine.load` require a reference to the typedef used to convert
+    values.  A custom Engine could use the :class:~TypeDefinition` attributes
+    `python_type` and `backing_type` to find the correct typedef from the set
+    of available typedefs and automatically convert to the necessary format.
+
+    '''
+    def __init__(self, namespace="global", *args, **kwargs):
         self.namespace = namespace
         self.unbound_types = set()
         self.bound_types = {}
 
     def register(self, typedef):
+        '''
+        Add the typedef to this engine if it is compatible.
+
+        After registering a :class:`~TypeDefinition`, it will not be bound
+        until :meth:`~TypeEngine.bind` is next called.
+
+        Nothing will happen when register is called with a typedef that is
+        pending binding or already bound.  Otherwise, the engine will ensure it
+        is compatible with the type using :meth:`~TypeEngine.is_compatible`
+        before adding it to the set of unbound types.
+
+        Parameters
+        ----------
+        typedef : `~TypeDefinition`
+            The typedef to register with this engine
+
+        Raises
+        ------
+        exc : :class:`ValueError`
+            If :meth:`~TypeEngine.is_compatible` returns false
+
+        '''
+        if typedef in self.bound_types or typedef in self.unbound_types:
+            return
         if not self.is_compatible(typedef):
             raise ValueError("Incompatible type {} for engine {}".format(
                 typedef, self))
-        if typedef not in self.bound_types:
-            self.unbound_types.add(typedef)
+        self.unbound_types.add(typedef)
 
     def bind(self, **config):
+        ''' Bind all unbound types to the engine '''
         for typedef in self.unbound_types:
             load, dump = typedef.bind(self, **config)
             self.bound_types[typedef] = {
@@ -48,12 +92,99 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         self.unbound_types.clear()
 
     def load(self, typedef, value):
+        '''
+        Return the result of the bound load method for a typedef
+
+        Looks up the load function that was bound to the engine for a typedef,
+        and return the result of passing `value` to that function.
+
+        Parameters
+        ----------
+        typedef : :class:`~TypeDefinition`
+            The typedef whose bound load method should be used
+        value : object
+            The value to be passed into the bound load method
+
+        Returns
+        -------
+        loaded_value : object
+            The return value of the load function for the input value
+
+        Raises
+        ------
+        exc : :class:`KeyError`
+            If the input typedef is not bound to this engine
+
+        Example
+        -------
+
+        .. code-block:: python
+
+            class Account(TypeDefinition):
+                prefix = "::account"
+                def load(self, value):
+                    return value + Account.prefix
+
+                def dump(self, value):
+                    return value[:-len(Account.prefix)]
+
+            typedef = Account()
+            engine = TypeEngine("accounts")
+            engine.register(typedef)
+            engine.bind()
+            assert engine.dump(typedef, "Jill::account") == "Jill"
+
+        '''
         return self.bound_types[typedef]["load"](value)
 
     def dump(self, typedef, value):
+        '''
+        Return the result of the bound dump method for a typedef
+
+        Looks up the dump function that was bound to the engine for a typedef,
+        and return the result of passing `value` to that function.
+
+        Parameters
+        ----------
+        typedef : :class:`~TypeDefinition`
+            The typedef whose bound dump method should be used
+        value : object
+            The value to be passed into the bound dump method
+
+        Returns
+        -------
+        dumped_value : object
+            The return value of the dump function for the input value
+
+        Raises
+        ------
+        exc : :class:`KeyError`
+            If the input typedef is not bound to this engine
+
+        Example
+        -------
+
+        .. code-block:: python
+
+            class Account(TypeDefinition):
+                prefix = "::account"
+                def load(self, value):
+                    return value + Account.prefix
+
+                def dump(self, value):
+                    return value[:-len(Account.prefix)]
+
+            typedef = Account()
+            engine = TypeEngine("accounts")
+            engine.register(typedef)
+            engine.bind()
+            assert engine.load(typedef, "Jill") == "Jill::account"
+
+        '''
         return self.bound_types[typedef]["dump"](value)
 
     def is_compatible(sef, typedef):  # pragma: no cover
+        ''' Returns true if the typedef is compatible with this engine '''
         return True
 
     def __contains__(self, typedef):
@@ -66,17 +197,38 @@ _fixed_engines["global"] = TypeEngine("global")
 
 
 class TypeDefinition(object):
-    """ Translates between python types and backend/storage/transport types """
+    ''' Translates between python types and backend/storage/transport types '''
     python_type = None
     backing_type = None
 
-    def bind(self, engine=TypeEngine('global'), **config):
-        """
-        Bind the typedef to an engine, compiling the typedef's ``load`` and
-        ``dump`` functions.  Defaults to binding to ``TypeEngine('global')``.
+    def bind(self, engine, **config):
+        '''
+        Return a pair of (load, dump) functions for a specific engine.
 
-        Returns (load, dump) functions.
-        """
+        Some Types will load and dump values depending on certain config, or
+        for different :class:`TypeEngine`s.
+
+        By default, this function will return the output of
+        :meth:`TypeDefinition.bind_load_func` and
+        :meth:`TypeDefinition.bind_dump_func`.  If either of those functions
+        returns `None`, that function (load or dump) will use the equivalent
+        class method instead.
+
+        The default :meth:`TypeDefintion.load` and :meth:`TypeDefintion.dump`
+        functions simply return the input value.
+
+        Parameters
+        ----------
+        engine : :class:`TypeEngine`
+            The engine that will save these load, dump functions
+        config : dictionary
+            Optional configuration for creating the functions.
+
+        Returns
+        -------
+        (load, dump) : (func, func) tuple
+            Each function takes a single argument and returns a single value
+        '''
         # If the conversion function builder returned None, use self.load
         # (passthrough functions unless defined)
         load = self.bind_load_func(engine, **config) or self.load
@@ -85,7 +237,7 @@ class TypeDefinition(object):
         return load, dump
 
     def bind_load_func(self, engine, **config):  # pragma: no cover
-        """
+        '''
         Return a conversion function for loading values.
 
         Returns a callable which will receive a ``backing_type`` value as the
@@ -94,11 +246,11 @@ class TypeDefinition(object):
 
         If processing is not necessary, the method should return ``None``.
 
-        """
+        '''
         return None
 
     def bind_dump_func(self, engine, **config):  # pragma: no cover
-        """
+        '''
         Return a conversion function for dumping values.
 
         Returns a callable which will receive a ``python_type`` value as the
@@ -107,7 +259,7 @@ class TypeDefinition(object):
 
         If processing is not necessary, the method should return ``None``.
 
-        """
+        '''
         return None
 
     def load(self, value):
@@ -188,8 +340,19 @@ class Field(object):
 
 
 def index(objects, attr):
-    """
+    '''
     Generate a mapping of a list of objects indexed by the given attr.
+
+    Parameters
+    ----------
+    objects : :class:`list`, iterable
+    attr : string
+        The attribute to index the list of objects by
+
+    Returns
+    -------
+    dictionary : dict
+        keys are the value of each object's attr, and values are from objects
 
     Example
     -------
@@ -212,17 +375,17 @@ def index(objects, attr):
     assert by_name['one'] is people[0]
     assert by_email['two@people.com'] is people[1]
 
-    """
+    '''
     return {getattr(obj, attr): obj for obj in objects}
 
 
 def metadata_from_bases(bases):
-    """
+    '''
     Walk up the bases of a class, looking for a __meta__ attribute.
     If one is found, try to return a copy it.  If that fails or no base has
     the attribute, return an empty dict.
 
-    """
+    '''
     # Since None is the same as "don't copy this", use a sentinel to indicate
     # a missing attribute.  Stop walking up on None, not on missing
     for base in bases:
@@ -239,18 +402,18 @@ def metadata_from_bases(bases):
 
 
 class ModelMetaclass(type, TypeDefinition):
-    """
+    '''
     Track the order that ``Field`` attributes are declared,
     use a namespaced TypeEngine and register/bind fields' typedefs,
     insert a __meta__ attribute in the class
-    """
+    '''
     @classmethod
     def __prepare__(metaclass, name, bases):
-        """ Returns an OrderedDict so attribute order is preserved """
+        ''' Returns an OrderedDict so attribute order is preserved '''
         return collections.OrderedDict()
 
     def __new__(metaclass, name, bases, attrs):
-        """ Add an OrderedDict ``fields`` to __meta__ """
+        ''' Add an OrderedDict ``fields`` to __meta__ '''
 
         # Track meta, either copying from bases or empty dict
         # -------------------------------------------------------

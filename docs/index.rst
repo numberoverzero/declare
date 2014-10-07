@@ -1,13 +1,10 @@
 declare - Scaffolding for frameworks
 =================================================
 
-Many popular python frameworks have at some point re-invented the declarative
-model, including a custom type system and various descriptors.  This is
-(yet another) attempt at collecting the basic building blocks so that a
-framework can pull the components they want, and quickly drop in relational
-and business logic and get going.  By keeping YetAnotherBaseMetaclass out of
-their code, tracing the life of an object from python -> backend -> python
-should become much easier.
+declare is a library for creating declarative systems.  Its intended audience
+includes both library authors and end users - models can be subclassed and put
+to use immediately, or dynamically created to quickly scaffold out a framework.
+
 
 
 Code lives here: https://github.com/numberoverzero/declare
@@ -15,8 +12,25 @@ Code lives here: https://github.com/numberoverzero/declare
 User Guide
 ----------
 
+.. toctree::
+    :maxdepth: 2
+    :glob:
+
+    topics/getting_started
+    topics/models
+    topics/fields
+    topics/types
+    topics/conditions
+
 API Reference
 -------------
+
+.. automodule:: declare
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+    declare
 
 Similar Modules
 ---------------

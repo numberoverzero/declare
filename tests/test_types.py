@@ -121,6 +121,19 @@ def test_register_incompatibile_typedef(NumericEngine, Base64BytesTypeDef):
     assert typedef not in engine
 
 
+def test_register_multiple_calls(NumericEngine, NumericStringTypeDef):
+
+    ''' multiple calls to register with the same typedef should be fine '''
+
+    engine = NumericEngine("test_namespace")
+    typedef = NumericStringTypeDef()
+
+    engine.register(typedef)
+    assert typedef not in engine
+    engine.register(typedef)
+    assert typedef not in engine
+
+
 def test_register_compatibile_typedef(NumericEngine, NumericStringTypeDef):
 
     ''' register should succeed if the typedef is compatibile '''
