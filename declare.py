@@ -206,20 +206,20 @@ class TypeDefinition(object):
         Return a pair of (load, dump) functions for a specific engine.
 
         Some Types will load and dump values depending on certain config, or
-        for different :class:`TypeEngine`s.
+        for different :class:`~TypeEngine`s.
 
         By default, this function will return the output of
-        :meth:`TypeDefinition.bind_load_func` and
-        :meth:`TypeDefinition.bind_dump_func`.  If either of those functions
+        :meth:`~TypeDefinition.bind_load_func` and
+        :meth:`~TypeDefinition.bind_dump_func`.  If either of those functions
         returns `None`, that function (load or dump) will use the equivalent
         class method instead.
 
-        The default :meth:`TypeDefintion.load` and :meth:`TypeDefintion.dump`
+        The default :meth:`~TypeDefintion.load` and :meth:`~TypeDefintion.dump`
         functions simply return the input value.
 
         Parameters
         ----------
-        engine : :class:`TypeEngine`
+        engine : :class:`~TypeEngine`
             The engine that will save these load, dump functions
         config : dictionary
             Optional configuration for creating the functions.
