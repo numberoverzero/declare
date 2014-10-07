@@ -10,7 +10,7 @@ declare
 .. |coverage| image:: https://coveralls.io/repos/numberoverzero/declare/badge.png?branch=master
 .. _coverage: https://coveralls.io/r/numberoverzero/declare?branch=master
 
-Scaffolding for frameworks
+Declarative scaffolding for frameworks
 
 Installation
 ============

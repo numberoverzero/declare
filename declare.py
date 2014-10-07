@@ -1,3 +1,4 @@
+''' Declarative scaffolding for frameworks '''
 import collections
 import uuid
 __all__ = ["Model", "Field", "TypeDefinition", "TypeEngine"]
@@ -40,10 +41,11 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 
     This makes it easier for groups of components to use a single engine to
     translate values by type.  By default :meth:`~TypeEngine.load` and
-    :meth:`~TypeEngine.load` require a reference to the typedef used to convert
+    :meth:`~TypeEngine.dump` require a reference to the typedef used to convert
     values.  A custom Engine could use the :class:~TypeDefinition` attributes
-    `python_type` and `backing_type` to find the correct typedef from the set
-    of available typedefs and automatically convert to the necessary format.
+    ``python_type`` and ``backing_type`` to find the correct typedef from the
+    set of available typedefs and automatically convert to the necessary
+    format.
 
     '''
     def __init__(self, namespace="global", *args, **kwargs):
@@ -211,7 +213,7 @@ class TypeDefinition(object):
         By default, this function will return the output of
         :meth:`~TypeDefinition.bind_load_func` and
         :meth:`~TypeDefinition.bind_dump_func`.  If either of those functions
-        returns `None`, that function (load or dump) will use the equivalent
+        returns ``None``, that function (load or dump) will use the equivalent
         class method instead.
 
         The default :meth:`~TypeDefintion.load` and :meth:`~TypeDefintion.dump`
@@ -244,7 +246,7 @@ class TypeDefinition(object):
         sole positional argument and will return a ``python_type`` value
         to return to the user.
 
-        If processing is not necessary, the method should return ``None``.
+        If processing is not necessary, this method should return ``None``.
 
         '''
         return None
@@ -257,7 +259,7 @@ class TypeDefinition(object):
         sole positional argument and will return a ``backing_type`` value
         to send to the backend.
 
-        If processing is not necessary, the method should return ``None``.
+        If processing is not necessary, this method should return ``None``.
 
         '''
         return None

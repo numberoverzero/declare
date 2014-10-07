@@ -1,4 +1,4 @@
-declare - Scaffolding for frameworks
+declare - Declarative scaffolding for frameworks
 =================================================
 
 declare is a library for creating declarative systems.  Its intended audience
@@ -57,5 +57,3 @@ Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

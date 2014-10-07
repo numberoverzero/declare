@@ -21,7 +21,7 @@ if __name__ == "__main__":
     setup(
         name='declare',
         version='0.1.0',
-        description="Scaffolding for frameworks",
+        description="Declarative scaffolding for frameworks",
         long_description=README + '\n\n' + CHANGES,
         classifiers=[
             'Development Status :: 3 - Alpha',
