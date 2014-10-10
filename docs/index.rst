@@ -25,7 +25,7 @@ Similar Modules
 ---------------
 * marrow.schema_ - Almost identical, with different names and the exception
   of the Type API.  Wider compatibility (2.6+, 3.2+) with less restrictions
-  (``Field``'s equivalent, ``Attribute``, does not require a type system -
+  (``Attribute``, the equivalent of ``Field``, does not require a type system -
   although one could be dropped in without issue.)
 * normalize_ - Serialization is called out as an intended usage.  Field
   equivalent ``Property`` offers more built-in logic, such as ``required``,

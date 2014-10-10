@@ -33,7 +33,7 @@ class TypeEngineMeta(type):
 
 class TypeEngine(object, metaclass=TypeEngineMeta):
     '''
-    Collection of bound :class:`~TypeDefinition`s for a given namespace.
+    Collection of bound :class:`~TypeDefinition` for a given namespace.
 
     TypeEngines are unique by namespace::
 
@@ -42,7 +42,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
     This makes it easier for groups of components to use a single engine to
     translate values by type.  By default :meth:`~TypeEngine.load` and
     :meth:`~TypeEngine.dump` require a reference to the typedef used to convert
-    values.  A custom Engine could use the :class:~TypeDefinition` attributes
+    values.  A custom Engine could use the :class:`~TypeDefinition` attributes
     ``python_type`` and ``backing_type`` to find the correct typedef from the
     set of available typedefs and automatically convert to the necessary
     format.
@@ -67,13 +67,13 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 
         Parameters
         ----------
-        typedef : `~TypeDefinition`
+        typedef : :class:`~TypeDefinition`
             The typedef to register with this engine
 
         Raises
         ------
         exc : :class:`ValueError`
-            If :meth:`~TypeEngine.is_compatible` returns false
+            If :meth:`~TypeEngine.is_compatible` is falsey
 
         '''
         if typedef in self.bound_types or typedef in self.unbound_types:
@@ -84,7 +84,23 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         self.unbound_types.add(typedef)
 
     def bind(self, **config):
-        ''' Bind all unbound types to the engine '''
+        '''
+        Bind all unbound types to the engine.
+
+        Bind each unbound typedef to the engine, passing in the engine and
+        :attr:`config`.  The resulting ``load`` and ``dump`` functions can
+        be found under ``self.bound_types[typedef]["load"]`` and
+        ``self.bound_types[typedef]["dump"], respectively.
+
+        Parameters
+        ----------
+        config : dict, optional
+            Engine-binding configuration to pass to each typedef that will be
+            bound.  Examples include floating-point precision values, maximum
+            lengths for strings, or any other translation constraints/settings
+            that a typedef needs to construct a load/dump function pair.
+
+        '''
         for typedef in self.unbound_types:
             load, dump = typedef.bind(self, **config)
             self.bound_types[typedef] = {
@@ -186,7 +202,13 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         return self.bound_types[typedef]["dump"](value)
 
     def is_compatible(sef, typedef):  # pragma: no cover
-        ''' Returns true if the typedef is compatible with this engine '''
+        '''
+        Returns ``true`` if the typedef is compatible with this engine.
+
+        This function should return ``False`` otherwise.  The default
+        implementation will always return ``True``.
+
+        '''
         return True
 
     def __contains__(self, typedef):
@@ -208,7 +230,7 @@ class TypeDefinition(object):
         Return a pair of (load, dump) functions for a specific engine.
 
         Some Types will load and dump values depending on certain config, or
-        for different :class:`~TypeEngine`s.
+        for different :class:`~TypeEngine`.
 
         By default, this function will return the output of
         :meth:`~TypeDefinition.bind_load_func` and
@@ -265,9 +287,21 @@ class TypeDefinition(object):
         return None
 
     def load(self, value):
+        '''
+        Default load function for a :class:`~TypeDefinition`
+
+        Returns :attr:`value` unchanged.
+
+        '''
         return value
 
     def dump(self, value):
+        '''
+        Default dump function for a :class:`~TypeDefinition`
+
+        Returns :attr:`value` unchanged.
+
+        '''
         return value
 
     def __repr__(self):  # pragma: no cover

@@ -13,8 +13,7 @@ REQUIREMENTS = [
 ]
 
 TEST_REQUIREMENTS = [
-    'nose',
-    'mock',
+    'pytest',
 ]
 
 if __name__ == "__main__":
