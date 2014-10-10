@@ -12,27 +12,14 @@ def test_default_metadata():
     assert hasattr(Class, '__meta__')
 
 
-def test_dict_metadata():
-
-    ''' metadata uses a MutableMapping when present '''
-
-    class CustomDictionary(dict):
-        pass
-    dict_instance = CustomDictionary()
-
-    class Class(metaclass=ModelMetaclass):
-        __meta__ = dict_instance
-    assert Class.__meta__ is dict_instance
-
-
 def test_non_mapping_metadata():
 
-    ''' ModelMetaclass throws when __meta__
+    ''' ModelMetaclass uses empty dict when meta
     is a non-MutableMapping value '''
 
-    with pytest.raises(AttributeError):
-        class Class(metaclass=ModelMetaclass):
-            __meta__ = None
+    class Class(metaclass=ModelMetaclass):
+        __meta__ = None
+    assert isinstance(Class.__meta__, collections.MutableMapping)
 
 
 def test_parent_class_mapping_metadata():
@@ -46,8 +33,7 @@ def test_parent_class_mapping_metadata():
     class Derived(Base):
         pass
 
-    assert Base.__meta__ is d
-    assert Derived.__meta__ is not d
+    assert Base.__meta__['a'] == d['a']
     assert Derived.__meta__ == Base.__meta__
 
 
@@ -62,7 +48,7 @@ def test_parent_class_mapping_non_metadata():
         pass
 
     assert Base.__meta__ is None
-    assert isinstance(Derived.__meta__, collections.abc.MutableMapping)
+    assert isinstance(Derived.__meta__, collections.MutableMapping)
 
 
 def test_field_mixin_finds_fields_and_subclasses():

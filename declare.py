@@ -419,16 +419,10 @@ class ModelMetaclass(type, TypeDefinition):
 
         # Track meta, either copying from bases or empty dict
         # -------------------------------------------------------
-        meta = attrs.get('__meta__', missing)
-        if not isinstance(meta, collections.MutableMapping):
-            # Try to find it in the class's parents
-            if meta is missing:
-                meta = metadata_from_bases(bases)
-            # __meta__ was None or list or...
-            # Don't blow it away, raise because we expected a dict-like obj
-            else:
-                raise AttributeError("Expected __meta__ to be dict-like,"
-                                     + " got {} instead".format(meta))
+        meta = metadata_from_bases(bases)
+        new_meta = attrs.get('__meta__', {})
+        if isinstance(new_meta, collections.MutableMapping):
+            meta.update(new_meta)
         attrs['__meta__'] = meta
 
         cls = super().__new__(metaclass, name, bases, attrs)

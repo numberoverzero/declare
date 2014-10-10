@@ -28,7 +28,7 @@ project = u'declare'
 copyright = u'2014, Joe Cross'
 github_user = u'numberoverzero'
 
-release = '0.1.0'
+release = '0.2.0'
 version = '.'.join(release.split('.')[:2])
 
 exclude_patterns = ['_build']

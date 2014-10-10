@@ -6,31 +6,20 @@ includes both library authors and end users - models can be subclassed and put
 to use immediately, or dynamically created to quickly scaffold out a framework.
 
 
-
 Code lives here: https://github.com/numberoverzero/declare
+
 
 User Guide
 ----------
 
-.. toctree::
-    :maxdepth: 2
-    :glob:
-
-    topics/getting_started
-    topics/models
-    topics/fields
-    topics/types
-    topics/conditions
+TBD
 
 API Reference
 -------------
 
 .. automodule:: declare
-    :members:
-    :undoc-members:
-    :show-inheritance:
+  :members:
 
-    declare
 
 Similar Modules
 ---------------
@@ -52,8 +41,3 @@ Similar Modules
 .. _normalize: http://hearsaycorp.github.io/normalize/
 .. _param: http://ioam.github.io/param/
 .. _scheme: https://github.com/siq/scheme
-
-Indices and tables
-==================
-
-* :ref:`genindex`
