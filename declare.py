@@ -310,20 +310,37 @@ class TypeDefinition(object):
     __str__ = __repr__
 
 
+def subclassof(obj, classinfo):
+    ''' Wrap issubclass to only return True/False '''
+    try:
+        return issubclass(obj, classinfo)
+    except TypeError:
+        return False
+
+
+def instanceof(obj, classinfo):
+    ''' Wrap isinstance to only return True/False '''
+    try:
+        return isinstance(obj, classinfo)
+    except TypeError:  # pragma: no cover
+        # No coverage since we never call this without a class,
+        # type, or tuple of classes, types, or such typles.
+        return False
+
+
 class Field(object):
     def __init__(self, typedef=missing, **kwargs):
         self._model_name = None
         if typedef is missing:
             typedef = TypeDefinition
-        try:
-            if issubclass(typedef, TypeDefinition):
-                typedef = typedef()
-        except TypeError:
-            if not isinstance(typedef, TypeDefinition):
-                raise TypeError(
-                    "Expected {} to be instance or subclass of TypeDefinition".
-                    format(typedef))
-        self.typedef = typedef
+        if subclassof(typedef, TypeDefinition):
+            typedef = typedef()
+        if instanceof(typedef, TypeDefinition):
+            self.typedef = typedef
+        else:
+            raise TypeError(
+                "Expected {} to be instance or subclass of TypeDefinition".
+                format(typedef))
 
     @property
     def model_name(self):
