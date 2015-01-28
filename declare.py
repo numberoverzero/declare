@@ -1,7 +1,7 @@
 ''' Declarative scaffolding for frameworks '''
 import collections
 import uuid
-__all__ = ["Model", "Field", "TypeDefinition", "TypeEngine"]
+__all__ = ["Model", "ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
 
 missing = object()
 # These engines can't be cleared

@@ -19,7 +19,7 @@ TEST_REQUIREMENTS = [
 if __name__ == "__main__":
     setup(
         name='declare',
-        version='0.2.0',
+        version='0.2.1',
         description="Declarative scaffolding for frameworks",
         long_description=README + '\n\n' + CHANGES,
         classifiers=[
