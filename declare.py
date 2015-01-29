@@ -214,9 +214,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
     def __contains__(self, typedef):
         return typedef in self.bound_types
 
-    def __repr__(self):  # pragma: no cover
-        return "{}({})".format(self.__class__.__name__, self.namespace)
-    __str__ = __repr__
+
 _fixed_engines["global"] = TypeEngine("global")
 
 
@@ -303,11 +301,6 @@ class TypeDefinition(object):
 
         '''
         return value
-
-    def __repr__(self):  # pragma: no cover
-        cls = self.__class__.__name__
-        return "{}({} <-> {})".format(cls, self.python_type, self.backing_type)
-    __str__ = __repr__
 
 
 def subclassof(obj, classinfo):
