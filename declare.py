@@ -53,6 +53,12 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         self.unbound_types = set()
         self.bound_types = {}
 
+    @classmethod
+    def unique(cls):
+            ''' Return a unique type engine (using uuid4) '''
+            namespace = str(uuid.uuid4())
+            return TypeEngine(namespace)
+
     def register(self, typedef):
         '''
         Add the typedef to this engine if it is compatible.
@@ -337,6 +343,7 @@ class Field(object):
 
     @property
     def model_name(self):
+        ''' Name of the model's attr that references self '''
         return self._model_name
 
     @model_name.setter
@@ -483,9 +490,8 @@ class ModelMetaclass(type, TypeDefinition):
         elif namespace:
             engine = TypeEngine(namespace)
         else:
-            # Neither defined, generate a unique namespace
-            namespace = "{}-{}".format(name, uuid.uuid4())
-            engine = TypeEngine(namespace)
+            engine = TypeEngine.unique()
+            namespace = engine.namespace
         meta['namespace'] = namespace
         meta['type_engine'] = engine
         meta['type_engine_config'] = engine_config
