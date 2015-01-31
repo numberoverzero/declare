@@ -53,10 +53,6 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         self.unbound_types = set()
         self.bound_types = {}
 
-    def __eq__(self, other):
-        ''' TypeEngines are unique instances by namespace '''
-        return self is other
-
     @classmethod
     def unique(cls):
             ''' Return a unique type engine (using uuid4) '''
@@ -228,8 +224,47 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 _fixed_engines["global"] = TypeEngine("global")
 
 
-class TypeDefinition(object):
-    ''' Translates between python types and backend/storage/transport types '''
+class TypeDefinitionMetaclass(type):
+    def __new__(metaclass, name, bases, attrs):
+        '''
+        Try to load `load`, `dump` from attrs.  If that fails, check bases for
+        `__load__` and `__dump__`
+
+        '''
+        load = attrs.pop('load', None)
+        dump = attrs.pop('dump', None)
+
+        for base in bases:
+            try:
+                if load is None:
+                    load = base.__load__
+            except AttributeError:
+                pass
+            try:
+                if dump is None:
+                    dump = base.__dump__
+            except AttributeError:
+                pass
+
+        attrs['__load__'] = load
+        attrs['__dump__'] = dump
+
+        return super().__new__(metaclass, name, bases, attrs)
+
+
+class TypeDefinition(object, metaclass=TypeDefinitionMetaclass):
+    '''
+    Translates between python types and backend/storage/transport types
+
+    A single TypeDefinition can be used for multiple TypeEngines, by
+    implementing :meth:`~TypeDefinition.bind` and returning different
+    (load, dump) function tuples for each engine.
+
+    For TypeDefinitions that are loaded/dumped the same for every engine,
+    just implement :meth:`~TypeDefinition.load` and
+    :meth:`~TypeDefinition.dump`.
+
+    '''
     python_type = None
     backing_type = None
 
@@ -240,11 +275,8 @@ class TypeDefinition(object):
         Some Types will load and dump values depending on certain config, or
         for different :class:`~TypeEngine`.
 
-        By default, this function will return the output of
-        :meth:`~TypeDefinition.bind_load_func` and
-        :meth:`~TypeDefinition.bind_dump_func`.  If either of those functions
-        returns ``None``, that function (load or dump) will use the equivalent
-        class method instead.
+        By default, this function will return the functions
+        :meth:`~TypeDefinition.load` and :meth:`~TypeDefinition.dump`.
 
         The default :meth:`~TypeDefintion.load` and :meth:`~TypeDefintion.dump`
         functions simply return the input value.
@@ -261,53 +293,36 @@ class TypeDefinition(object):
         (load, dump) : (func, func) tuple
             Each function takes a single argument and returns a single value
         '''
-        # If the conversion function builder returned None, use self.load
-        # (passthrough functions unless defined)
-        load = self.bind_load_func(engine, **config) or self.load
-        dump = self.bind_dump_func(engine, **config) or self.dump
-
-        return load, dump
-
-    def bind_load_func(self, engine, **config):  # pragma: no cover
-        '''
-        Return a conversion function for loading values.
-
-        Returns a callable which will receive a ``backing_type`` value as the
-        sole positional argument and will return a ``python_type`` value
-        to return to the user.
-
-        If processing is not necessary, this method should return ``None``.
-
-        '''
-        return None
-
-    def bind_dump_func(self, engine, **config):  # pragma: no cover
-        '''
-        Return a conversion function for dumping values.
-
-        Returns a callable which will receive a ``python_type`` value as the
-        sole positional argument and will return a ``backing_type`` value
-        to send to the backend.
-
-        If processing is not necessary, this method should return ``None``.
-
-        '''
-        return None
+        return self.__load__, self.__dump__
 
     def load(self, value):
         '''
-        Default load function for a :class:`~TypeDefinition`
+        Engine-agnostic load function.  Implement this method for any
+        TypeDefinition whose load function does not depend on the TypeEngine
+        being used to load it.
 
-        Returns :attr:`value` unchanged.
+        NOTE: This will not be available at runtime -
+        TypeDefinitionMetaclass hides the reference at runtime to reduce the
+        chance of incorrectly using an engine-agnostic load method when the
+        TypeDefinition prefers an engine-specific load method.
+
+        By default, returns :attr:`value` unchanged.
 
         '''
         return value
 
     def dump(self, value):
         '''
-        Default dump function for a :class:`~TypeDefinition`
+        Engine-agnostic dump function.  Implement this method for any
+        TypeDefinition whose dump function does not depend on the TypeEngine
+        being used to dump it.
 
-        Returns :attr:`value` unchanged.
+        NOTE: This will not be available at runtime -
+        TypeDefinitionMetaclass hides the reference at runtime to reduce the
+        chance of incorrectly using an engine-agnostic dump method when the
+        TypeDefinition prefers an engine-specific dump method.
+
+        By default, returns :attr:`value` unchanged.
 
         '''
         return value

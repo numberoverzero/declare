@@ -36,15 +36,17 @@ def NumericStringTypeDef():
         backing_type = int
         calls = collections.defaultdict(int)
 
-        def bind_load_func(self, engine, **config):
-            # int -> str
-            self.calls['bind_load_func'] += 1
-            return lambda x: str(x)
+        def bind(self, engine, **config):
+            self.calls['bind'] += 1
+            return super().bind(engine, **config)
 
-        def bind_dump_func(self, engine, **config):
+        def load(self, value):
+            # int -> str
+            return str(value)
+
+        def dump(self, value):
             # str -> int
-            self.calls['bind_dump_func'] += 1
-            return lambda x: int(x)
+            return int(value)
 
     return TestTypeDef
 
@@ -56,13 +58,12 @@ def Base64BytesTypeDef():
         python_type = bytes
         backing_type = str
 
-        def bind_load_func(self, engine, **config):
-            # base64 str -> bytes
-            return lambda x: base64.b64decode(x.encode("UTF-8"))
-
-        def bind_dump_func(self, engine, **config):
-            # bytes -> base64 str
-            return lambda x: base64.b64encode(x).decode("UTF-8")
+        def bind(self, engine, **config):
+            # return (load, dump)
+            return (
+                lambda x: base64.b64decode(x.encode("UTF-8")),
+                lambda x: base64.b64encode(x).decode("UTF-8")
+            )
 
     return TestTypeDef
 
@@ -82,6 +83,17 @@ def SimpleTypeDef():
     return TestTypeDef
 
 
+@pytest.fixture()
+def engine_for():
+    def func(*typedefs):
+        engine = TypeEngine.unique()
+        for typedef in typedefs:
+            engine.register(typedef)
+        engine.bind()
+        return engine
+    return func
+
+
 def test_unique_namespaces():
 
     ''' Not terribly effective test of TypeEngine.unique() '''
@@ -90,18 +102,6 @@ def test_unique_namespaces():
     engine2 = TypeEngine.unique()
 
     assert engine1 is not engine2
-
-
-def test_engine_equality():
-
-    ''' == aliases `is` '''
-
-    engine = TypeEngine.unique()
-    same = TypeEngine(engine.namespace)
-    other = TypeEngine.unique()
-
-    assert engine == same
-    assert engine != other
 
 
 def test_engine_same_namespace():
@@ -196,59 +196,33 @@ def test_multiple_bind_calls(NumericEngine, NumericStringTypeDef):
     engine = NumericEngine("test_namespace")
     typedef = NumericStringTypeDef()
     engine.register(typedef)
-    states = [
-        (False, 0),
-        (True,  1),
-        (True,  1),
-    ]
-    for (bound, calls) in states:
-        assert typedef.calls['bind_load_func'] == calls
-        assert typedef.calls['bind_dump_func'] == calls
-        engine.bind()
+
+    assert typedef.calls['bind'] == 0
+    engine.bind()
+    assert typedef.calls['bind'] == 1
+    engine.bind()
+    assert typedef.calls['bind'] == 1
+    engine.bind()
 
 
-def test_unbound_typedef_conversions(NumericStringTypeDef):
-
-    ''' typedefs should use passthrough functions if not bound '''
-
-    typedef = NumericStringTypeDef()
-    values = ['string', 1, None, object()]
-    for value in values:
-        assert value == typedef.load(value)
-        assert value == typedef.dump(value)
-
-
-def test_unbound_default_typedef_conversions():
-
-    ''' typedefs should use passthrough functions if bind is not called '''
-
-    typedef = TypeDefinition()
-    values = ['string', 1, None, object()]
-    for value in values:
-        assert value == typedef.load(value)
-        assert value == typedef.dump(value)
-
-
-def test_bound_default_typedef_conversions():
+def test_bound_default_typedef_conversions(engine_for):
 
     ''' typedefs should use passthrough functions if bind returned None '''
 
-    engine = TypeEngine("global")
     typedef = TypeDefinition()
-    typedef.bind(engine)
+    engine = engine_for(typedef)
     values = ['string', 1, None, object()]
     for value in values:
-        assert value == typedef.load(value)
-        assert value == typedef.dump(value)
+        assert value == engine.load(typedef, value)
+        assert value == engine.dump(typedef, value)
 
 
-def test_bound_typedef_conversions(Base64BytesTypeDef):
+def test_bound_typedef_conversions(Base64BytesTypeDef, engine_for):
 
     ''' typedefs should bind load/dump '''
 
-    engine = TypeEngine("global")
     typedef = Base64BytesTypeDef()
-    load, dump = typedef.bind(engine)
+    engine = engine_for(typedef)
 
     values = [
         ("Hello, World!", "SGVsbG8sIFdvcmxkIQ=="),
@@ -257,8 +231,8 @@ def test_bound_typedef_conversions(Base64BytesTypeDef):
 
     for (py_str, backing_value) in values:
         py_value = py_str.encode("UTF-8")
-        assert dump(py_value) == backing_value
-        assert load(backing_value) == py_value
+        assert engine.dump(typedef, py_value) == backing_value
+        assert engine.load(typedef, backing_value) == py_value
 
 
 def test_fallback_class_load_dump(SimpleTypeDef):
