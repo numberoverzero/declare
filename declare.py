@@ -502,7 +502,6 @@ class ModelMetaclass(type, TypeDefinition):
         for name, attr in attrs.items():
             if isinstance(attr, Field):
                 fields.append(attr)
-                engine.register(attr.typedef)
                 # This will raise AttributeError if the field's
                 # name is already set
                 attr.model_name = name
@@ -512,7 +511,6 @@ class ModelMetaclass(type, TypeDefinition):
         # TypeEngine setup
         # ----------------
         engine.bind(**engine_config)
-        cls.python_type = cls
 
         return cls
 
