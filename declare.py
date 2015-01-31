@@ -53,6 +53,10 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         self.unbound_types = set()
         self.bound_types = {}
 
+    def __eq__(self, other):
+        ''' TypeEngines are unique instances by namespace '''
+        return self is other
+
     @classmethod
     def unique(cls):
             ''' Return a unique type engine (using uuid4) '''
@@ -456,8 +460,7 @@ def metadata_from_bases(bases):
 
 class ModelMetaclass(type, TypeDefinition):
     '''
-    Track the order that ``Field`` attributes are declared,
-    use a namespaced TypeEngine and register/bind fields' typedefs,
+    Track the order that ``Field`` attributes are declared, and
     insert a __meta__ attribute in the class
     '''
     @classmethod
@@ -478,25 +481,7 @@ class ModelMetaclass(type, TypeDefinition):
 
         cls = super().__new__(metaclass, name, bases, attrs)
 
-        # Load or create a unique namespace and engine
-        # ------------------------------------------------
-        engine = meta.get("type_engine", None)
-        engine_config = meta.get("type_engine_config", {})
-        namespace = meta.get("namespace", None)
-        if (engine and namespace) and (engine.namespace != namespace):
-            raise AttributeError("Model namespace is overdefined!")
-        if engine:
-            namespace = engine.namespace
-        elif namespace:
-            engine = TypeEngine(namespace)
-        else:
-            engine = TypeEngine.unique()
-            namespace = engine.namespace
-        meta['namespace'] = namespace
-        meta['type_engine'] = engine
-        meta['type_engine_config'] = engine_config
-
-        # Load and index fields, register field typedefs with engine
+        # Load and index fields by name
         # ----------------------------------------------------------
         fields = []
         for name, attr in attrs.items():
@@ -507,10 +492,6 @@ class ModelMetaclass(type, TypeDefinition):
                 attr.model_name = name
         meta['fields_by_model_name'] = index(fields, 'model_name')
         meta['fields'] = fields
-
-        # TypeEngine setup
-        # ----------------
-        engine.bind(**engine_config)
 
         return cls
 

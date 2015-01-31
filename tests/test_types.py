@@ -82,6 +82,28 @@ def SimpleTypeDef():
     return TestTypeDef
 
 
+def test_unique_namespaces():
+
+    ''' Not terribly effective test of TypeEngine.unique() '''
+
+    engine1 = TypeEngine.unique()
+    engine2 = TypeEngine.unique()
+
+    assert engine1 is not engine2
+
+
+def test_engine_equality():
+
+    ''' == aliases `is` '''
+
+    engine = TypeEngine.unique()
+    same = TypeEngine(engine.namespace)
+    other = TypeEngine.unique()
+
+    assert engine == same
+    assert engine != other
+
+
 def test_engine_same_namespace():
 
     ''' Two engines with the same namespace should be the same object '''

@@ -1,6 +1,5 @@
 import collections
-import pytest
-from declare import Field, TypeDefinition, TypeEngine, ModelMetaclass
+from declare import Field, TypeDefinition, ModelMetaclass
 
 
 def test_default_metadata():
@@ -83,42 +82,6 @@ def test_field_mixin_finds_fields_and_subclasses():
 
     # Non-fields are not included
     assert 'other' not in fields
-
-
-def test_overdefined_model_namespace():
-
-    ''' Conflicting namespaces in engine, namespace raise '''
-
-    with pytest.raises(AttributeError):
-        class Model(metaclass=ModelMetaclass):
-            __meta__ = {
-                'type_engine': TypeEngine('namespace1'),
-                'namespace': 'namespace2'
-            }
-
-
-def test_namespace_from_engine():
-
-    ''' Only engine is defined '''
-
-    class Model(metaclass=ModelMetaclass):
-        __meta__ = {
-            'type_engine': TypeEngine('namespace1')
-        }
-
-    assert Model.__meta__['namespace'] == 'namespace1'
-
-
-def test_engine_from_namespace():
-
-    ''' Only namespace is defined '''
-
-    class Model(metaclass=ModelMetaclass):
-        __meta__ = {
-            'namespace': 'namespace1'
-        }
-
-    assert Model.__meta__['type_engine'] is TypeEngine('namespace1')
 
 
 def test_model_sets_field_model_names():
