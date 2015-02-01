@@ -1,7 +1,7 @@
 ''' Declarative scaffolding for frameworks '''
 import collections
 import uuid
-__all__ = ["Model", "ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
+__all__ = ["ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
 
 missing = object()
 # These engines can't be cleared
@@ -224,35 +224,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 _fixed_engines["global"] = TypeEngine("global")
 
 
-class TypeDefinitionMetaclass(type):
-    def __new__(metaclass, name, bases, attrs):
-        '''
-        Try to load `load`, `dump` from attrs.  If that fails, check bases for
-        `__load__` and `__dump__`
-
-        '''
-        load = attrs.pop('load', None)
-        dump = attrs.pop('dump', None)
-
-        for base in bases:
-            try:
-                if load is None:
-                    load = base.__load__
-            except AttributeError:
-                pass
-            try:
-                if dump is None:
-                    dump = base.__dump__
-            except AttributeError:
-                pass
-
-        attrs['__load__'] = load
-        attrs['__dump__'] = dump
-
-        return super().__new__(metaclass, name, bases, attrs)
-
-
-class TypeDefinition(object, metaclass=TypeDefinitionMetaclass):
+class TypeDefinition(object):
     '''
     Translates between python types and backend/storage/transport types
 
@@ -295,7 +267,7 @@ class TypeDefinition(object, metaclass=TypeDefinitionMetaclass):
         '''
         return self.__load__, self.__dump__
 
-    def load(self, value):
+    def __load__(self, value):
         '''
         Engine-agnostic load function.  Implement this method for any
         TypeDefinition whose load function does not depend on the TypeEngine
@@ -311,7 +283,7 @@ class TypeDefinition(object, metaclass=TypeDefinitionMetaclass):
         '''
         return value
 
-    def dump(self, value):
+    def __dump__(self, value):
         '''
         Engine-agnostic dump function.  Implement this method for any
         TypeDefinition whose dump function does not depend on the TypeEngine
@@ -451,28 +423,6 @@ def index(objects, attr):
     return {getattr(obj, attr): obj for obj in objects}
 
 
-def metadata_from_bases(bases):
-    '''
-    Walk up the bases of a class, looking for a __meta__ attribute.
-    If one is found, try to return a copy it.  If that fails or no base has
-    the attribute, return an empty dict.
-
-    '''
-    # Since None is the same as "don't copy this", use a sentinel to indicate
-    # a missing attribute.  Stop walking up on None, not on missing
-    for base in bases:
-        meta = getattr(base, '__meta__', missing)
-        if meta is not missing:
-            try:
-                return meta.copy()
-            except AttributeError:
-                # Something without a copy method, such as None
-                # Don't copy, return a new dict
-                return {}
-    # Didn't find any __meta__ to copy
-    return {}
-
-
 class ModelMetaclass(type, TypeDefinition):
     '''
     Track the order that ``Field`` attributes are declared, and
@@ -486,13 +436,9 @@ class ModelMetaclass(type, TypeDefinition):
     def __new__(metaclass, name, bases, attrs):
         ''' Add an OrderedDict ``fields`` to __meta__ '''
 
-        # Track meta, either copying from bases or empty dict
+        # Ensure __meta__ is a dict
         # -------------------------------------------------------
-        meta = metadata_from_bases(bases)
-        new_meta = attrs.get('__meta__', {})
-        if isinstance(new_meta, collections.MutableMapping):
-            meta.update(new_meta)
-        attrs['__meta__'] = meta
+        meta = attrs['__meta__'] = attrs.get('__meta__', {})
 
         cls = super().__new__(metaclass, name, bases, attrs)
 
@@ -509,7 +455,3 @@ class ModelMetaclass(type, TypeDefinition):
         meta['fields'] = fields
 
         return cls
-
-
-class Model(object, metaclass=ModelMetaclass):
-    pass

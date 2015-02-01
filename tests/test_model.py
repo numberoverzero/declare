@@ -1,3 +1,4 @@
+import pytest
 import collections
 from declare import Field, TypeDefinition, ModelMetaclass
 
@@ -13,27 +14,11 @@ def test_default_metadata():
 
 def test_non_mapping_metadata():
 
-    ''' ModelMetaclass uses empty dict when meta
-    is a non-MutableMapping value '''
+    ''' ModelMetaclass raises when meta is a non-MutableMapping value '''
 
-    class Class(metaclass=ModelMetaclass):
-        __meta__ = None
-    assert isinstance(Class.__meta__, collections.MutableMapping)
-
-
-def test_parent_class_mapping_metadata():
-
-    ''' ModelMetaclass finds metadata in parent class and copies it '''
-    d = {'a': 'Hello, World!'}
-
-    class Base(metaclass=ModelMetaclass):
-        __meta__ = d
-
-    class Derived(Base):
-        pass
-
-    assert Base.__meta__['a'] == d['a']
-    assert Derived.__meta__ == Base.__meta__
+    with pytest.raises(TypeError):
+        class Class(metaclass=ModelMetaclass):
+            __meta__ = None
 
 
 def test_parent_class_mapping_non_metadata():
