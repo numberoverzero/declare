@@ -2,6 +2,7 @@
 import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
+__version__ = "0.6.0"
 
 missing = object()
 # These engines can't be cleared

@@ -9,6 +9,13 @@ CHANGES = open(os.path.join(HERE, 'CHANGES.rst')).read()
 # Remove custom RST extensions for pypi
 CHANGES = re.sub(r'\(\s*:(issue|pr|sha):.*?\)', '', CHANGES)
 
+
+def get_version():
+    with open('declare.py') as f:
+        for line in f:
+            if line.startswith('__version__'):
+                return eval(line.split('=')[-1])
+
 REQUIREMENTS = [
 ]
 
@@ -19,11 +26,11 @@ TEST_REQUIREMENTS = [
 if __name__ == "__main__":
     setup(
         name='declare',
-        version='0.6.0',
+        version=get_version(),
         description="Declarative scaffolding for frameworks",
         long_description=README + '\n\n' + CHANGES,
         classifiers=[
-            'Development Status :: 3 - Alpha',
+            'Development Status :: 4 - Beta',
             'Intended Audience :: Developers',
             'License :: OSI Approved :: MIT License',
             'Operating System :: OS Independent',
