@@ -2,7 +2,7 @@
 import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 
 missing = object()
 # These engines can't be cleared
@@ -83,7 +83,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             If :meth:`~TypeEngine.is_compatible` is falsey
 
         '''
-        if typedef in self.bound_types or typedef in self.unbound_types:
+        if typedef in self.bound_types:
             return
         if not self.is_compatible(typedef):
             raise ValueError("Incompatible type {} for engine {}".format(
@@ -108,13 +108,18 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             that a typedef needs to construct a load/dump function pair.
 
         '''
-        for typedef in self.unbound_types:
-            load, dump = typedef.bind(self, **config)
-            self.bound_types[typedef] = {
-                "load": load,
-                "dump": dump
-            }
-        self.unbound_types.clear()
+        while self.unbound_types:
+            typedef = self.unbound_types.pop()
+            try:
+                load, dump = typedef.bind(self, **config)
+            except Exception as exception:
+                self.unbound_types.add(typedef)
+                raise exception
+            else:
+                self.bound_types[typedef] = {
+                    "load": load,
+                    "dump": dump
+                }
 
     def load(self, typedef, value):
         '''

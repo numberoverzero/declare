@@ -84,6 +84,16 @@ def SimpleTypeDef():
 
 
 @pytest.fixture()
+def TypeDefRaisesOnBind():
+    class TestTypeDef(TypeDefinition):
+        exception = ValueError("Default test exception")
+        ''' Always raises on self.bind '''
+        def bind(self, engine, **config):
+            raise self.exception
+    return TestTypeDef
+
+
+@pytest.fixture()
 def engine_for():
     def func(*typedefs):
         engine = TypeEngine.unique()
@@ -181,6 +191,18 @@ def test_register_does_not_bind(NumericEngine, NumericStringTypeDef):
     assert typedef in engine.unbound_types
 
 
+def test_register_bound_type(NumericEngine, NumericStringTypeDef):
+
+    ''' registering a typedef that's already bound doesn't do anything '''
+    engine = NumericEngine("test_namespace")
+    typedef = NumericStringTypeDef()
+
+    engine.register(typedef)
+    engine.bind()
+    engine.register(typedef)
+    assert typedef not in engine.unbound_types
+
+
 def test_bind_empty_engine():
 
     ''' bind doesn't do anything when the engine has no types '''
@@ -233,6 +255,21 @@ def test_bound_typedef_conversions(Base64BytesTypeDef, engine_for):
         py_value = py_str.encode("UTF-8")
         assert engine.dump(typedef, py_value) == backing_value
         assert engine.load(typedef, backing_value) == py_value
+
+
+def test_bind_handles_exceptions(TypeDefRaisesOnBind):
+
+    ''' A typedef that raises during bind isn't removed from unbound_types '''
+
+    typedef = TypeDefRaisesOnBind()
+    typedef.exception = TypeError("Failed to bind")
+
+    engine = TypeEngine.unique()
+    engine.register(typedef)
+
+    with pytest.raises(TypeError):
+        engine.bind()
+    assert typedef in engine.unbound_types
 
 
 def test_fallback_class_load_dump(SimpleTypeDef):
