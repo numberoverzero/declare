@@ -1,4 +1,4 @@
-declare
+declare 0.9.0
 ========
 :Build: |build|_ |coverage|_
 :Documentation: http://declare.readthedocs.org/
@@ -62,8 +62,8 @@ Let's build a quick model for Minecraft blocks::
 
         @classmethod
         def load(cls, wire):
-            fields = cls.__meta__['fields_by_model_name']
-            engine = cls.__meta__['type_engine']
+            fields = cls.Meta.fields_by_model_name
+            engine = cls.Meta.type_engine
             wire = json.loads(wire)
             kwargs = {}
             for name, field in fields.items():
@@ -72,8 +72,8 @@ Let's build a quick model for Minecraft blocks::
 
         @classmethod
         def dump(cls, obj):
-            fields = cls.__meta__['fields_by_model_name']
-            engine = cls.__meta__['type_engine']
+            fields = cls.Meta.fields_by_model_name
+            engine = cls.Meta.type_engine
             kwargs = {}
             for name, field in fields.items():
                 kwargs[name] = engine.dump(field.typedef, getattr(obj, name))
@@ -122,8 +122,8 @@ as fields, making recursive load/dump easy::
 
         @classmethod
         def load(cls, wire):
-            fields = cls.__meta__['fields_by_model_name']
-            engine = cls.__meta__['type_engine']
+            fields = cls.Meta.fields_by_model_name
+            engine = cls.Meta.type_engine
             wire = json.loads(wire)
             kwargs = {}
             for name, field in fields.items():
@@ -132,8 +132,8 @@ as fields, making recursive load/dump easy::
 
         @classmethod
         def dump(cls, obj):
-            fields = cls.__meta__['fields_by_model_name']
-            engine = cls.__meta__['type_engine']
+            fields = cls.Meta.fields_by_model_name
+            engine = cls.Meta.type_engine
             kwargs = {}
             for name, field in fields.items():
                 kwargs[name] = engine.dump(field.typedef, getattr(obj, name))

@@ -2,7 +2,7 @@
 import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
-__version__ = "0.7.0"
+__version__ = "0.9.0"
 
 missing = object()
 # These engines can't be cleared
@@ -432,7 +432,7 @@ def index(objects, attr):
 class ModelMetaclass(type, TypeDefinition):
     '''
     Track the order that ``Field`` attributes are declared, and
-    insert a __meta__ attribute in the class
+    insert a Meta object (class) in the class
     '''
     @classmethod
     def __prepare__(metaclass, name, bases):
@@ -440,11 +440,15 @@ class ModelMetaclass(type, TypeDefinition):
         return collections.OrderedDict()
 
     def __new__(metaclass, name, bases, attrs):
-        ''' Add an OrderedDict ``fields`` to __meta__ '''
+        ''' Add a container class `Meta` to the class '''
 
-        # Ensure __meta__ is a dict
-        # -------------------------------------------------------
-        meta = attrs['__meta__'] = attrs.get('__meta__', {})
+        Meta = attrs.get('Meta', missing)
+        if Meta is missing:
+            class Meta:
+                pass
+            attrs['Meta'] = Meta
+        if not isinstance(Meta, type):
+            raise TypeError("Expected `Meta` to be a class object")
 
         cls = super().__new__(metaclass, name, bases, attrs)
 
@@ -457,7 +461,7 @@ class ModelMetaclass(type, TypeDefinition):
                 # This will raise AttributeError if the field's
                 # name is already set
                 attr.model_name = name
-        meta['fields_by_model_name'] = index(fields, 'model_name')
-        meta['fields'] = fields
+        Meta.fields_by_model_name = index(fields, 'model_name')
+        Meta.fields = fields
 
         return cls

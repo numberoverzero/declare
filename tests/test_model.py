@@ -1,5 +1,4 @@
 import pytest
-import collections
 from declare import Field, TypeDefinition, ModelMetaclass
 
 
@@ -9,7 +8,7 @@ def test_default_metadata():
 
     class Class(metaclass=ModelMetaclass):
         pass
-    assert hasattr(Class, '__meta__')
+    assert hasattr(Class, 'Meta')
 
 
 def test_non_mapping_metadata():
@@ -18,27 +17,26 @@ def test_non_mapping_metadata():
 
     with pytest.raises(TypeError):
         class Class(metaclass=ModelMetaclass):
-            __meta__ = None
+            Meta = None
 
 
 def test_parent_class_mapping_non_metadata():
 
-    ''' ModelMetaclass finds non-dict metadata in
-    parent class and uses new dict '''
+    ''' ModelMetaclass doesn't use parent Meta instance '''
     class Base(object):
-        __meta__ = None
+        class Meta:
+            base_attr = "foo"
 
     class Derived(Base, metaclass=ModelMetaclass):
         pass
 
-    assert Base.__meta__ is None
-    assert isinstance(Derived.__meta__, collections.MutableMapping)
+    assert Derived.Meta is not Base.Meta
 
 
 def test_field_mixin_finds_fields_and_subclasses():
 
     ''' All instances of ``field.Field`` and its subclasses are added to
-    ``__meta__['fields']``. '''
+    ``Meta['fields']``. '''
     class Subclass(Field):
         pass
 
@@ -50,8 +48,8 @@ def test_field_mixin_finds_fields_and_subclasses():
         model_g = g
         other = list()
 
-    fields = Model.__meta__['fields']
-    fields_by_name = Model.__meta__['fields_by_model_name']
+    fields = Model.Meta.fields
+    fields_by_name = Model.Meta.fields_by_model_name
 
     # Keyed by the class's attr keys
     assert 'model_f' in fields_by_name
@@ -76,7 +74,7 @@ def test_model_sets_field_model_names():
     class Model(metaclass=ModelMetaclass):
         f = Field()
     assert Model.f.model_name == 'f'
-    assert 'f' in Model.__meta__['fields_by_model_name']
+    assert 'f' in Model.Meta.fields_by_model_name
 
 
 def test_model_metaclass_is_typedef():
