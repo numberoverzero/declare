@@ -2,7 +2,7 @@
 import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 missing = object()
 # These engines can't be cleared
@@ -165,7 +165,13 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             assert engine.dump(typedef, "Jill::account") == "Jill"
 
         '''
-        return self.bound_types[typedef]["load"](value)
+        try:
+            bound_type = self.bound_types[typedef]
+        except KeyError:
+            raise KeyError("Can't load unknown type {}".format(typedef))
+        else:
+            # Don't need to try/catch since load/dump are bound together
+            return bound_type["load"](value)
 
     def dump(self, typedef, value):
         '''
@@ -211,7 +217,13 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             assert engine.load(typedef, "Jill") == "Jill::account"
 
         '''
-        return self.bound_types[typedef]["dump"](value)
+        try:
+            bound_type = self.bound_types[typedef]
+        except KeyError:
+            raise KeyError("Can't dump unknown type {}".format(typedef))
+        else:
+            # Don't need to try/catch since load/dump are bound together
+            return bound_type["dump"](value)
 
     def is_compatible(sef, typedef):  # pragma: no cover
         '''
