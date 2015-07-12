@@ -1,7 +1,8 @@
 import base64
 import collections
 import pytest
-from declare import TypeEngine, TypeDefinition, TypeEngineMeta
+from declare import (TypeEngine, TypeDefinition,
+                     TypeEngineMeta, DeclareException)
 
 
 @pytest.fixture(autouse=True)
@@ -291,11 +292,11 @@ def test_dump_unbound_typedef(SimpleTypeDef):
     engine = TypeEngine("global")
     typedef = SimpleTypeDef()
 
-    with pytest.raises(KeyError):
+    with pytest.raises(DeclareException):
         engine.dump(typedef, "foo")
 
     engine.register(typedef)
-    with pytest.raises(KeyError):
+    with pytest.raises(DeclareException):
         engine.dump(typedef, "foo")
 
     engine.bind()
@@ -308,11 +309,11 @@ def test_load_unbound_typedef(SimpleTypeDef):
     engine = TypeEngine("global")
     typedef = SimpleTypeDef()
 
-    with pytest.raises(KeyError):
+    with pytest.raises(DeclareException):
         engine.load(typedef, "foo::test")
 
     engine.register(typedef)
-    with pytest.raises(KeyError):
+    with pytest.raises(DeclareException):
         engine.load(typedef, "foo::test")
 
     engine.bind()

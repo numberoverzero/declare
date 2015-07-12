@@ -1,12 +1,21 @@
 ''' Declarative scaffolding for frameworks '''
 import collections
 import uuid
-__all__ = ["ModelMetaclass", "Field", "TypeDefinition", "TypeEngine"]
-__version__ = "0.9.1"
+__all__ = ["ModelMetaclass", "Field", "TypeDefinition",
+           "TypeEngine", "DeclareException"]
+__version__ = "0.9.3"
 
 missing = object()
 # These engines can't be cleared
 _fixed_engines = collections.ChainMap()
+
+
+class DeclareException(Exception):
+    '''
+    Custom exception for cases where raising a built-in exception
+    would be ambiguous (whether it was thrown by declare or a bound function)
+    '''
+    pass
 
 
 class TypeEngineMeta(type):
@@ -168,7 +177,8 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         try:
             bound_type = self.bound_types[typedef]
         except KeyError:
-            raise KeyError("Can't load unknown type {}".format(typedef))
+            raise DeclareException(
+                "Can't load unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
             return bound_type["load"](value)
@@ -220,7 +230,8 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         try:
             bound_type = self.bound_types[typedef]
         except KeyError:
-            raise KeyError("Can't dump unknown type {}".format(typedef))
+            raise DeclareException(
+                "Can't dump unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
             return bound_type["dump"](value)
