@@ -41,11 +41,11 @@ def NumericStringTypeDef():
             self.calls['bind'] += 1
             return super().bind(engine, **config)
 
-        def __load__(self, value):
+        def _load(self, value):
             # int -> str
             return str(value)
 
-        def __dump__(self, value):
+        def _dump(self, value):
             # str -> int
             return int(value)
 
@@ -73,13 +73,13 @@ def Base64BytesTypeDef():
 def SimpleTypeDef():
     class TestTypeDef(TypeDefinition):
         ''' Always uses ``load`` and ``dump`` regardless of engine '''
-        def __load__(self, value):
+        def _load(self, value):
             suffix = "::test"
             if value.endswith(suffix):
                 return value[:-len(suffix)]
             return value
 
-        def __dump__(self, value):
+        def _dump(self, value):
             return value + "::test"
     return TestTypeDef
 

@@ -3,7 +3,7 @@ import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.3"
+__version__ = "0.9.4"
 
 missing = object()
 # These engines can't be cleared
@@ -294,9 +294,9 @@ class TypeDefinition(object):
         (load, dump) : (func, func) tuple
             Each function takes a single argument and returns a single value
         '''
-        return self.__load__, self.__dump__
+        return self._load, self._dump
 
-    def __load__(self, value):
+    def _load(self, value):
         '''
         Engine-agnostic load function.  Implement this method for any
         TypeDefinition whose load function does not depend on the TypeEngine
@@ -312,7 +312,7 @@ class TypeDefinition(object):
         '''
         return value
 
-    def __dump__(self, value):
+    def _dump(self, value):
         '''
         Engine-agnostic dump function.  Implement this method for any
         TypeDefinition whose dump function does not depend on the TypeEngine
