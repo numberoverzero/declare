@@ -1,5 +1,5 @@
 import pytest
-from declare import Field
+from declare import Field, TypeDefinition
 
 
 class Container(object):
@@ -87,8 +87,21 @@ def test_get_before_set():
         obj.field
 
 
+def test_typedef_class():
+
+    ''' passing a typedef class will store an instance of the class '''
+    field = Field(typedef=TypeDefinition)
+    assert field.typedef is not TypeDefinition
+
+
 def test_wrong_typedef_type():
 
-    ''' typedef must be instanceof or subclassof TypeDefinition '''
+    ''' typedef must be instanceof or subclassof TypeDefinition or None '''
+    # None is allowed
+    Field(typedef=None)
+
     with pytest.raises(TypeError):
-        Field(typedef=None)
+        Field(typedef=5)
+
+    with pytest.raises(TypeError):
+        Field(typedef=int)

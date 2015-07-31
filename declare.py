@@ -348,18 +348,19 @@ def instanceof(obj, classinfo):
 
 
 class Field(object):
-    def __init__(self, typedef=missing, **kwargs):
+    def __init__(self, typedef=None, **kwargs):
         self._model_name = None
-        if typedef is missing:
-            typedef = TypeDefinition
-        if subclassof(typedef, TypeDefinition):
-            typedef = typedef()
-        if instanceof(typedef, TypeDefinition):
+        if typedef is None:
             self.typedef = typedef
         else:
-            raise TypeError(
-                "Expected {} to be instance or subclass of TypeDefinition".
-                format(typedef))
+            if subclassof(typedef, TypeDefinition):
+                typedef = typedef()
+            if instanceof(typedef, TypeDefinition):
+                self.typedef = typedef
+            else:
+                raise TypeError(("Expected {} to be None, instance of "
+                                 "TypeDefinition, or subclass of"
+                                 "TypeDefinition".format(typedef)))
 
     @property
     def model_name(self):
