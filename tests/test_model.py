@@ -40,7 +40,7 @@ def test_field_mixin_finds_fields_and_subclasses():
     class Subclass(Field):
         pass
 
-    f = Field(TypeDefinition)
+    f = Field()
     g = Subclass(typedef=TypeDefinition())
 
     class Model(metaclass=ModelMetaclass):
@@ -72,7 +72,7 @@ def test_model_sets_field_model_names():
     ''' Fields' model_name is set at model creation '''
 
     class Model(metaclass=ModelMetaclass):
-        f = Field(TypeDefinition)
+        f = Field()
     assert Model.f.model_name == 'f'
     assert 'f' in Model.Meta.fields_by_model_name
 
@@ -81,5 +81,5 @@ def test_model_metaclass_is_typedef():
 
     ''' classes with meta=ModelMetaclass are instances of TypeDefinitions '''
     class Model(metaclass=ModelMetaclass):
-        f = Field(TypeDefinition)
+        f = Field()
     assert isinstance(Model, TypeDefinition)

@@ -3,7 +3,7 @@ import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.5"
+__version__ = "0.9.4"
 
 missing = object()
 # These engines can't be cleared
@@ -348,8 +348,10 @@ def instanceof(obj, classinfo):
 
 
 class Field(object):
-    def __init__(self, typedef, **kwargs):
+    def __init__(self, typedef=missing, **kwargs):
         self._model_name = None
+        if typedef is missing:
+            typedef = TypeDefinition
         if subclassof(typedef, TypeDefinition):
             typedef = typedef()
         if instanceof(typedef, TypeDefinition):
