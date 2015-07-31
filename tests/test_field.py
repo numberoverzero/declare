@@ -1,17 +1,17 @@
 import pytest
-from declare import Field
+from declare import Field, TypeDefinition
 
 
 class Container(object):
     ''' Subclass object so instances have a __dict__ '''
-    field = Field()
+    field = Field(TypeDefinition)
 Container.field.model_name = 'field'
 
 
 def test_set_model_name_twice():
 
     ''' fields can be set to a model by name only once '''
-    f = Field()
+    f = Field(TypeDefinition)
     f.model_name = "model1"
 
     with pytest.raises(AttributeError):
@@ -22,7 +22,7 @@ def test_set_model_name_twice():
 def test_set_raises_without_name():
 
     ''' can't store a value in obj dict without a name as a key '''
-    f = Field()
+    f = Field(TypeDefinition)
     obj = object()
     with pytest.raises(AttributeError):
         f.set(obj, 'value')
@@ -31,7 +31,7 @@ def test_set_raises_without_name():
 def test_get_raises_without_name():
 
     ''' can't get a value in obj dict without a name as a key '''
-    f = Field()
+    f = Field(TypeDefinition)
     obj = object()
     with pytest.raises(AttributeError):
         f.get(obj)
@@ -40,7 +40,7 @@ def test_get_raises_without_name():
 def test_delete_raises_without_name():
 
     ''' can't delete a value from obj dict without a name as a key '''
-    f = Field()
+    f = Field(TypeDefinition)
     obj = object()
     with pytest.raises(AttributeError):
         f.delete(obj)
