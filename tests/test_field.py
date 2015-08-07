@@ -105,3 +105,18 @@ def test_wrong_typedef_type():
 
     with pytest.raises(TypeError):
         Field(typedef=int)
+
+
+def test_cooperate_inheritance():
+
+    ''' unused kwargs are delegated to other __init__ methods in the MRO '''
+    class OtherBase:
+        def __init__(self, *, foo, **kwargs):
+            self.foo = foo
+            super().__init__(**kwargs)
+
+    class Class(Field, OtherBase):
+        pass
+
+    obj = Class(typedef=TypeDefinition, foo='bar')
+    assert obj.foo == 'bar'

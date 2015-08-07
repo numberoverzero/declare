@@ -3,7 +3,7 @@ import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.6"
+__version__ = "0.9.7"
 
 missing = object()
 # These engines can't be cleared
@@ -253,7 +253,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 _fixed_engines["global"] = TypeEngine("global")
 
 
-class TypeDefinition(object):
+class TypeDefinition:
     '''
     Translates between python types and backend/storage/transport types
 
@@ -347,8 +347,8 @@ def instanceof(obj, classinfo):
         return False
 
 
-class Field(object):
-    def __init__(self, typedef=None, **kwargs):
+class Field:
+    def __init__(self, *, typedef=None, **kwargs):
         self._model_name = None
         if typedef is None:
             self.typedef = typedef
@@ -361,6 +361,7 @@ class Field(object):
                 raise TypeError(("Expected {} to be None, instance of "
                                  "TypeDefinition, or subclass of"
                                  "TypeDefinition".format(typedef)))
+        super().__init__(**kwargs)
 
     @property
     def model_name(self):
