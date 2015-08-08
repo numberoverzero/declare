@@ -3,7 +3,7 @@ import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.7"
+__version__ = "0.9.8"
 
 missing = object()
 # These engines can't be cleared
@@ -97,7 +97,9 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         if not self.is_compatible(typedef):
             raise ValueError("Incompatible type {} for engine {}".format(
                 typedef, self))
-        self.unbound_types.add(typedef)
+        if typedef not in self.unbound_types:
+            self.unbound_types.add(typedef)
+            typedef._register(self)
 
     def bind(self, **config):
         '''
@@ -295,6 +297,12 @@ class TypeDefinition:
             Each function takes a single argument and returns a single value
         '''
         return self._load, self._dump
+
+    def _register(self, engine):
+        '''
+        Called when the type is registered with an engine.
+        '''
+        pass
 
     def _load(self, value):
         '''

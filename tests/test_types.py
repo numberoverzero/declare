@@ -204,12 +204,31 @@ def test_register_bound_type(NumericEngine, NumericStringTypeDef):
     assert typedef not in engine.unbound_types
 
 
+def test_register_calls_typedef_register():
+
+    ''' registering a type informs the type that it's been registered '''
+
+    class Notify(TypeDefinition):
+        registered = False
+
+        def _register(self, engine):
+            self.registered = True
+
+    engine = TypeEngine.unique()
+    typedef = Notify()
+
+    assert not typedef.registered
+    engine.register(typedef)
+    assert typedef.registered
+
+
 def test_bind_empty_engine():
 
     ''' bind doesn't do anything when the engine has no types '''
 
-    TypeEngine("global").bind()
-    assert not TypeEngine("global").bound_types
+    engine = TypeEngine.unique()
+    engine.bind()
+    assert not engine.bound_types
 
 
 def test_multiple_bind_calls(NumericEngine, NumericStringTypeDef):
@@ -278,7 +297,7 @@ def test_fallback_class_load_dump(SimpleTypeDef):
     ''' if the class defines ``load`` and ``dump``, fall back to those methods
     instead of the default TypeDefinition functions (passthroughs) '''
 
-    engine = TypeEngine("global")
+    engine = TypeEngine.unique()
     typedef = SimpleTypeDef()
     load, dump = typedef.bind(engine)
 
@@ -289,7 +308,7 @@ def test_fallback_class_load_dump(SimpleTypeDef):
 def test_dump_unbound_typedef(SimpleTypeDef):
 
     ''' engine.dump for an unbound typedef raises, even if registered '''
-    engine = TypeEngine("global")
+    engine = TypeEngine.unique()
     typedef = SimpleTypeDef()
 
     with pytest.raises(DeclareException):
@@ -306,7 +325,7 @@ def test_dump_unbound_typedef(SimpleTypeDef):
 def test_load_unbound_typedef(SimpleTypeDef):
 
     ''' engine.load for an unbound typedef raises, even if registered '''
-    engine = TypeEngine("global")
+    engine = TypeEngine.unique()
     typedef = SimpleTypeDef()
 
     with pytest.raises(DeclareException):

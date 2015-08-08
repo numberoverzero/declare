@@ -1,4 +1,4 @@
-declare 0.9.7
+declare 0.9.8
 ========
 :Build: |build|_ |coverage|_
 :Documentation: http://declare.readthedocs.org/
