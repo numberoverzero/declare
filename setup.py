@@ -42,7 +42,7 @@ if __name__ == "__main__":
         author_email='joe.mcross@gmail.com',
         url='http://declare.readthedocs.org/',
         license='MIT',
-        keywords='meta metaclass declarative orm',
+        keywords='meta metaclass declarative',
         platforms='any',
         include_package_data=True,
         py_modules=['declare'],
