@@ -123,14 +123,12 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             typedef = self.unbound_types.pop()
             try:
                 load, dump = typedef.bind(self, **config)
-            except Exception as exception:
-                self.unbound_types.add(typedef)
-                raise exception
-            else:
                 self.bound_types[typedef] = {
-                    "load": load,
-                    "dump": dump
+                    "load": load, "dump": dump
                 }
+            except Exception:
+                self.unbound_types.add(typedef)
+                raise
 
     def load(self, typedef, value):
         '''
