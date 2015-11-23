@@ -31,6 +31,7 @@ def test_parent_class_mapping_non_metadata():
         pass
 
     assert Derived.Meta is not Base.Meta
+    assert not hasattr(Derived.Meta, "base_attr")
 
 
 def test_field_mixin_finds_fields_and_subclasses():
