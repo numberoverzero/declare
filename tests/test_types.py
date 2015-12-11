@@ -360,17 +360,14 @@ def test_context_passed(engine_for):
         def _dump(self, value, context):
             context["dump"] += 1
             return super()._dump(value, context)
+
     typedef = Typedef()
     engine = engine_for(typedef)
 
     value = "value"
     context = {"load": 0, "dump": 0}
-    load, dump = 2, 11
+    engine.load(typedef, value, context)
+    engine.dump(typedef, value, context)
 
-    for _ in range(load):
-        engine.load(typedef, value, context)
-    for _ in range(dump):
-        engine.dump(typedef, value, context)
-
-    assert context["load"] == load
-    assert context["dump"] == dump
+    assert context["load"] == 1
+    assert context["dump"] == 1
