@@ -40,7 +40,7 @@ if __name__ == "__main__":
         ],
         author='Joe Cross',
         author_email='joe.mcross@gmail.com',
-        url='http://declare.readthedocs.org/',
+        url='https://github.com/numberoverzero/declare',
         license='MIT',
         keywords='meta metaclass declarative',
         platforms='any',

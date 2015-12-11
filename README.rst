@@ -1,4 +1,4 @@
-declare 0.9.8
+declare 0.9.9
 ========
 :Build: |build|_ |coverage|_
 :Documentation: http://declare.readthedocs.org/
@@ -37,10 +37,10 @@ Let's build a quick model for Minecraft blocks::
             1: "Stone",
             2: "Diamond"
         }
-        def load(self, value):
+        def load(self, value, context):
             return BlockType.types[value]
 
-        def dump(self, value):
+        def dump(self, value, context):
             # TODO: index types by value for O(1) lookup
             for tid, name in BlockType.types.items():
                 if value == name:
@@ -49,10 +49,10 @@ Let's build a quick model for Minecraft blocks::
 
     class Position(TypeDefinition):
         ''' [x, y, z] <--> "x:y:z" '''
-        def load(self, value):
+        def load(self, value, context):
             return [int(v) for v in value.split(':')]
 
-        def dump(self, value):
+        def dump(self, value, context):
             return ':'.join(str(v) for v in value)
 
 
@@ -67,7 +67,7 @@ Let's build a quick model for Minecraft blocks::
             wire = json.loads(wire)
             kwargs = {}
             for name, field in fields.items():
-                kwargs[name] = engine.load(field.typedef, wire[name])
+                kwargs[name] = engine.load(field.typedef, wire[name], {})
             return cls(**kwargs)
 
         @classmethod
@@ -76,7 +76,8 @@ Let's build a quick model for Minecraft blocks::
             engine = cls.Meta.type_engine
             kwargs = {}
             for name, field in fields.items():
-                kwargs[name] = engine.dump(field.typedef, getattr(obj, name))
+                kwargs[name] = engine.dump(
+                    field.typedef, getattr(obj, name), {})
             return json.dumps(kwargs)
 
 
@@ -111,10 +112,10 @@ as fields, making recursive load/dump easy::
 
     class List(TypeDefinition):
         ''' Adapter for lists of objects '''
-        def load(self, value):
-            return [self.typedef.load(v) for v in value]
-        def dump(self, value):
-            return [self.typedef.dump(v) for v in value]
+        def load(self, value, context):
+            return [self.typedef.load(v, context) for v in value]
+        def dump(self, value, context):
+            return [self.typedef.dump(v, context) for v in value]
 
 
     class Region(Model):
@@ -127,7 +128,7 @@ as fields, making recursive load/dump easy::
             wire = json.loads(wire)
             kwargs = {}
             for name, field in fields.items():
-                kwargs[name] = engine.load(field.typedef, wire[name])
+                kwargs[name] = engine.load(field.typedef, wire[name], {})
             return cls(**kwargs)
 
         @classmethod
@@ -136,7 +137,8 @@ as fields, making recursive load/dump easy::
             engine = cls.Meta.type_engine
             kwargs = {}
             for name, field in fields.items():
-                kwargs[name] = engine.dump(field.typedef, getattr(obj, name))
+                kwargs[name] = engine.dump(
+                    field.typedef, getattr(obj, name), {})
             return json.dumps(kwargs)
 
 

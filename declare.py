@@ -3,7 +3,7 @@ import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.8"
+__version__ = "0.9.9"
 
 missing = object()
 # These engines can't be cleared
@@ -130,12 +130,13 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 self.unbound_types.add(typedef)
                 raise
 
-    def load(self, typedef, value):
+    def load(self, typedef, value, context):
         '''
         Return the result of the bound load method for a typedef
 
         Looks up the load function that was bound to the engine for a typedef,
-        and return the result of passing `value` to that function.
+        and return the result of passing the given `value` and any `context`
+        to that function.
 
         Parameters
         ----------
@@ -143,6 +144,8 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             The typedef whose bound load method should be used
         value : object
             The value to be passed into the bound load method
+        **context : kwargs
+            Context for the value being loaded
 
         Returns
         -------
@@ -161,10 +164,10 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 
             class Account(TypeDefinition):
                 prefix = "::account"
-                def load(self, value):
+                def load(self, value, **context):
                     return value + Account.prefix
 
-                def dump(self, value):
+                def dump(self, value, **context):
                     return value[:-len(Account.prefix)]
 
             typedef = Account()
@@ -181,14 +184,15 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 "Can't load unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
-            return bound_type["load"](value)
+            return bound_type["load"](value, context)
 
-    def dump(self, typedef, value):
+    def dump(self, typedef, value, context):
         '''
         Return the result of the bound dump method for a typedef
 
         Looks up the dump function that was bound to the engine for a typedef,
-        and return the result of passing `value` to that function.
+        and return the result of passing the given `value` and any `context`
+        to that function.
 
         Parameters
         ----------
@@ -196,6 +200,8 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             The typedef whose bound dump method should be used
         value : object
             The value to be passed into the bound dump method
+        context : dict
+            Context for the value being dumped
 
         Returns
         -------
@@ -214,10 +220,10 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 
             class Account(TypeDefinition):
                 prefix = "::account"
-                def load(self, value):
+                def load(self, value, context):
                     return value + Account.prefix
 
-                def dump(self, value):
+                def dump(self, value, context):
                     return value[:-len(Account.prefix)]
 
             typedef = Account()
@@ -234,7 +240,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 "Can't dump unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
-            return bound_type["dump"](value)
+            return bound_type["dump"](value, context)
 
     def is_compatible(sef, typedef):  # pragma: no cover
         '''
@@ -262,8 +268,8 @@ class TypeDefinition:
     (load, dump) function tuples for each engine.
 
     For TypeDefinitions that are loaded/dumped the same for every engine,
-    just implement :meth:`~TypeDefinition.load` and
-    :meth:`~TypeDefinition.dump`.
+    just implement :meth:`~TypeDefinition._load` and
+    :meth:`~TypeDefinition._dump`.
 
     '''
     python_type = None
@@ -277,10 +283,10 @@ class TypeDefinition:
         for different :class:`~TypeEngine`.
 
         By default, this function will return the functions
-        :meth:`~TypeDefinition.load` and :meth:`~TypeDefinition.dump`.
+        :meth:`~TypeDefinition.load` and :meth:`~TypeDefinition._dump`.
 
-        The default :meth:`~TypeDefintion.load` and :meth:`~TypeDefintion.dump`
-        functions simply return the input value.
+        The default :meth:`~TypeDefintion._load` and
+        :meth:`~TypeDefintion._dump` functions simply return the input value.
 
         Parameters
         ----------
@@ -292,7 +298,7 @@ class TypeDefinition:
         Returns
         -------
         (load, dump) : (func, func) tuple
-            Each function takes a single argument and returns a single value
+            Each function takes a value and context, and returns a single value
         '''
         return self._load, self._dump
 
@@ -302,7 +308,7 @@ class TypeDefinition:
         '''
         pass
 
-    def _load(self, value):
+    def _load(self, value, context):
         '''
         Engine-agnostic load function.  Implement this method for any
         TypeDefinition whose load function does not depend on the TypeEngine
@@ -318,7 +324,7 @@ class TypeDefinition:
         '''
         return value
 
-    def _dump(self, value):
+    def _dump(self, value, context):
         '''
         Engine-agnostic dump function.  Implement this method for any
         TypeDefinition whose dump function does not depend on the TypeEngine
