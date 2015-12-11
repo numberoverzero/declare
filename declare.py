@@ -3,7 +3,7 @@ import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.9"
+__version__ = "0.9.10"
 
 missing = object()
 # These engines can't be cleared
@@ -130,7 +130,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 self.unbound_types.add(typedef)
                 raise
 
-    def load(self, typedef, value, context):
+    def load(self, typedef, value, *, context=None, **kwargs):
         '''
         Return the result of the bound load method for a typedef
 
@@ -184,9 +184,9 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 "Can't load unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
-            return bound_type["load"](value, context)
+            return bound_type["load"](value, context=context, **kwargs)
 
-    def dump(self, typedef, value, context):
+    def dump(self, typedef, value, *, context=None, **kwargs):
         '''
         Return the result of the bound dump method for a typedef
 
@@ -240,7 +240,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 "Can't dump unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
-            return bound_type["dump"](value, context)
+            return bound_type["dump"](value, context=context, **kwargs)
 
     def is_compatible(sef, typedef):  # pragma: no cover
         '''
@@ -308,7 +308,7 @@ class TypeDefinition:
         '''
         pass
 
-    def _load(self, value, context):
+    def _load(self, value, *, context=None, **kwargs):
         '''
         Engine-agnostic load function.  Implement this method for any
         TypeDefinition whose load function does not depend on the TypeEngine
@@ -324,7 +324,7 @@ class TypeDefinition:
         '''
         return value
 
-    def _dump(self, value, context):
+    def _dump(self, value, *, context=None, **kwargs):
         '''
         Engine-agnostic dump function.  Implement this method for any
         TypeDefinition whose dump function does not depend on the TypeEngine

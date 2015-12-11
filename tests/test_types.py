@@ -41,11 +41,11 @@ def NumericStringTypeDef():
             self.calls['bind'] += 1
             return super().bind(engine, **config)
 
-        def _load(self, value, context):
+        def _load(self, value, *, context=None, **kwargs):
             # int -> str
             return str(value)
 
-        def _dump(self, value, context):
+        def _dump(self, value, *, context=None, **kwargs):
             # str -> int
             return int(value)
 
@@ -61,10 +61,12 @@ def Base64BytesTypeDef():
 
         def bind(self, engine, **config):
             # return (load, dump)
-            return (
-                lambda x, ctx: base64.b64decode(x.encode("UTF-8")),
-                lambda x, ctx: base64.b64encode(x).decode("UTF-8")
-            )
+            def load(value, *, context=None, **kwargs):
+                return base64.b64decode(value.encode("UTF-8"))
+
+            def dump(value, *, context=None, **kwargs):
+                return base64.b64encode(value).decode("UTF-8")
+            return load, dump
 
     return TestTypeDef
 
@@ -73,13 +75,13 @@ def Base64BytesTypeDef():
 def SimpleTypeDef():
     class TestTypeDef(TypeDefinition):
         ''' Always uses ``load`` and ``dump`` regardless of engine '''
-        def _load(self, value, context):
+        def _load(self, value, *, context=None, **kwargs):
             suffix = "::test"
             if value.endswith(suffix):
                 return value[:-len(suffix)]
             return value
 
-        def _dump(self, value, context):
+        def _dump(self, value, *, context=None, **kwargs):
             return value + "::test"
     return TestTypeDef
 
@@ -101,13 +103,13 @@ def ContextType():
         python_type = str
         backing_type = int
 
-        def _load(self, value, context):
+        def _load(self, value, *, context=None, **kwargs):
             context["load"] += 1
-            return super()._load(value, context)
+            return super()._load(value, context=context, **kwargs)
 
-        def _dump(self, value, context):
+        def _dump(self, value, *, context=None, **kwargs):
             context["dump"] += 1
-            return super()._dump(value, context)
+            return super()._dump(value, context=context, **kwargs)
     return ContextType
 
 
@@ -271,10 +273,10 @@ def test_bound_default_typedef_conversions(engine_for):
     typedef = TypeDefinition()
     engine = engine_for(typedef)
     values = ['string', 1, None, object()]
-    context = {}
+    ctx = {}
     for value in values:
-        assert value == engine.load(typedef, value, context)
-        assert value == engine.dump(typedef, value, context)
+        assert value == engine.load(typedef, value, context=ctx)
+        assert value == engine.dump(typedef, value, context=ctx)
 
 
 def test_bound_typedef_conversions(Base64BytesTypeDef, engine_for):
@@ -288,12 +290,12 @@ def test_bound_typedef_conversions(Base64BytesTypeDef, engine_for):
         ("Hello, World!", "SGVsbG8sIFdvcmxkIQ=="),
         ("", "")
     ]
-    context = {}
+    ctx = {}
 
     for (py_str, backing_value) in values:
         py_value = py_str.encode("UTF-8")
-        assert engine.dump(typedef, py_value, context) == backing_value
-        assert engine.load(typedef, backing_value, context) == py_value
+        assert engine.dump(typedef, py_value, context=ctx) == backing_value
+        assert engine.load(typedef, backing_value, context=ctx) == py_value
 
 
 def test_bind_handles_exceptions(TypeDefRaisesOnBind):
@@ -319,10 +321,10 @@ def test_fallback_class_load_dump(SimpleTypeDef):
     engine = TypeEngine.unique()
     typedef = SimpleTypeDef()
     load, dump = typedef.bind(engine)
-    context = {}
+    ctx = {}
 
-    assert dump("hello", context) == "hello::test"
-    assert load("hello::test", context) == "hello"
+    assert dump("hello", context=ctx) == "hello::test"
+    assert load("hello::test", context=ctx) == "hello"
 
 
 def test_dump_unbound_typedef(SimpleTypeDef):
@@ -330,17 +332,17 @@ def test_dump_unbound_typedef(SimpleTypeDef):
     ''' engine.dump for an unbound typedef raises, even if registered '''
     engine = TypeEngine.unique()
     typedef = SimpleTypeDef()
-    context = {}
+    ctx = {}
 
     with pytest.raises(DeclareException):
-        engine.dump(typedef, "foo", context)
+        engine.dump(typedef, "foo", context=ctx)
 
     engine.register(typedef)
     with pytest.raises(DeclareException):
-        engine.dump(typedef, "foo", context)
+        engine.dump(typedef, "foo", context=ctx)
 
     engine.bind()
-    assert engine.dump(typedef, "foo", context) == "foo::test"
+    assert engine.dump(typedef, "foo", context=ctx) == "foo::test"
 
 
 def test_load_unbound_typedef(SimpleTypeDef):
@@ -348,17 +350,17 @@ def test_load_unbound_typedef(SimpleTypeDef):
     ''' engine.load for an unbound typedef raises, even if registered '''
     engine = TypeEngine.unique()
     typedef = SimpleTypeDef()
-    context = {}
+    ctx = {}
 
     with pytest.raises(DeclareException):
-        engine.load(typedef, "foo::test", context)
+        engine.load(typedef, "foo::test", context=ctx)
 
     engine.register(typedef)
     with pytest.raises(DeclareException):
-        engine.load(typedef, "foo::test", context)
+        engine.load(typedef, "foo::test", context=ctx)
 
     engine.bind()
-    assert engine.load(typedef, "foo::test", context) == "foo"
+    assert engine.load(typedef, "foo::test", context=ctx) == "foo"
 
 
 def test_context_passed(ContextType, engine_for):
@@ -370,8 +372,8 @@ def test_context_passed(ContextType, engine_for):
 
     value = "value"
     context = {"load": 0, "dump": 0}
-    engine.load(typedef, value, context)
-    engine.dump(typedef, value, context)
+    engine.load(typedef, value, context=context)
+    engine.dump(typedef, value, context=context)
 
     assert context["load"] == 1
     assert context["dump"] == 1
