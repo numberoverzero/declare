@@ -1,14 +1,15 @@
-declare 0.9.9
-========
-:Build: |build|_ |coverage|_
-:Documentation: http://declare.readthedocs.org/
-:Downloads: http://pypi.python.org/pypi/declare
-:Source: https://github.com/numberoverzero/declare
-
-.. |build| image:: https://travis-ci.org/numberoverzero/declare.svg?branch=master
-.. _build: https://travis-ci.org/numberoverzero/declare
-.. |coverage| image:: https://coveralls.io/repos/numberoverzero/declare/badge.png?branch=master
-.. _coverage: https://coveralls.io/r/numberoverzero/declare?branch=master
+.. image:: https://img.shields.io/travis/numberoverzero/declare/master.svg?style=flat-square
+    :target: https://travis-ci.org/numberoverzero/declare
+.. image:: https://img.shields.io/coveralls/numberoverzero/declare/master.svg?style=flat-square
+    :target: https://coveralls.io/github/numberoverzero/declare
+.. image:: https://img.shields.io/pypi/v/declare.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/declare
+.. image:: https://img.shields.io/pypi/status/declare.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/declare
+.. image:: https://img.shields.io/github/issues-raw/numberoverzero/declare.svg?style=flat-square
+    :target: https://github.com/numberoverzero/declare/issues
+.. image:: https://img.shields.io/pypi/l/declare.svg?style=flat-square
+    :target: https://github.com/numberoverzero/declare/blob/master/LICENSE
 
 Declarative scaffolding for frameworks
 

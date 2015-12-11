@@ -95,6 +95,23 @@ def TypeDefRaisesOnBind():
 
 
 @pytest.fixture()
+def ContextType():
+    class ContextType(TypeDefinition):
+        ''' Handles python strings, converts to backing type of int '''
+        python_type = str
+        backing_type = int
+
+        def _load(self, value, context):
+            context["load"] += 1
+            return super()._load(value, context)
+
+        def _dump(self, value, context):
+            context["dump"] += 1
+            return super()._dump(value, context)
+    return ContextType
+
+
+@pytest.fixture()
 def engine_for():
     def func(*typedefs):
         engine = TypeEngine.unique()
@@ -344,24 +361,11 @@ def test_load_unbound_typedef(SimpleTypeDef):
     assert engine.load(typedef, "foo::test", context) == "foo"
 
 
-def test_context_passed(engine_for):
+def test_context_passed(ContextType, engine_for):
 
     ''' context is passed to load, dump through engine '''
 
-    class Typedef(TypeDefinition):
-        ''' Handles python strings, converts to backing type of int '''
-        python_type = str
-        backing_type = int
-
-        def _load(self, value, context):
-            context["load"] += 1
-            return super()._load(value, context)
-
-        def _dump(self, value, context):
-            context["dump"] += 1
-            return super()._dump(value, context)
-
-    typedef = Typedef()
+    typedef = ContextType()
     engine = engine_for(typedef)
 
     value = "value"
