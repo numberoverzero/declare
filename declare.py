@@ -1,4 +1,4 @@
-''' Declarative scaffolding for frameworks '''
+"""Declarative scaffolding for frameworks"""
 import collections
 import uuid
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
@@ -11,20 +11,20 @@ _fixed_engines = collections.ChainMap()
 
 
 class DeclareException(Exception):
-    '''
+    """
     Custom exception for cases where raising a built-in exception
     would be ambiguous (whether it was thrown by declare or a bound function)
-    '''
+    """
     pass
 
 
 class TypeEngineMeta(type):
-    '''
+    """
     Factory for :class:`~TypeEngine` so that each engine is init'd only once.
 
     This is necessary since if :meth:`~TypeEngine.__new__` returns an instance
     of the class, the :meth:`~TypeEngine.__init__` method will be called.
-    '''
+    """
     engines = _fixed_engines.new_child()
 
     def __call__(cls, namespace, *args, **kwargs):
@@ -37,12 +37,12 @@ class TypeEngineMeta(type):
 
     @classmethod
     def clear_engines(metaclass):
-        ''' Clear all non-fixed engines '''
+        """Clear all non-fixed engines"""
         metaclass.engines.clear()
 
 
 class TypeEngine(object, metaclass=TypeEngineMeta):
-    '''
+    """
     Collection of bound :class:`~TypeDefinition` for a given namespace.
 
     TypeEngines are unique by namespace::
@@ -57,7 +57,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
     set of available typedefs and automatically convert to the necessary
     format.
 
-    '''
+    """
     def __init__(self, namespace="global", *args, **kwargs):
         self.namespace = namespace
         self.unbound_types = set()
@@ -65,12 +65,12 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
 
     @classmethod
     def unique(cls):
-            ''' Return a unique type engine (using uuid4) '''
-            namespace = str(uuid.uuid4())
-            return TypeEngine(namespace)
+        """Return a unique type engine (using uuid4)"""
+        namespace = str(uuid.uuid4())
+        return TypeEngine(namespace)
 
     def register(self, typedef):
-        '''
+        """
         Add the typedef to this engine if it is compatible.
 
         After registering a :class:`~TypeDefinition`, it will not be bound
@@ -91,7 +91,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
         exc : :class:`ValueError`
             If :meth:`~TypeEngine.is_compatible` is falsey
 
-        '''
+        """
         if typedef in self.bound_types:
             return
         if not self.is_compatible(typedef):
@@ -102,7 +102,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             typedef._register(self)
 
     def bind(self, **config):
-        '''
+        """
         Bind all unbound types to the engine.
 
         Bind each unbound typedef to the engine, passing in the engine and
@@ -118,7 +118,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             lengths for strings, or any other translation constraints/settings
             that a typedef needs to construct a load/dump function pair.
 
-        '''
+        """
         while self.unbound_types:
             typedef = self.unbound_types.pop()
             try:
@@ -130,8 +130,8 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 self.unbound_types.add(typedef)
                 raise
 
-    def load(self, typedef, value, *, context=None, **kwargs):
-        '''
+    def load(self, typedef, value, **kwargs):
+        """
         Return the result of the bound load method for a typedef
 
         Looks up the load function that was bound to the engine for a typedef,
@@ -144,7 +144,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             The typedef whose bound load method should be used
         value : object
             The value to be passed into the bound load method
-        **context : kwargs
+        **kwargs : kwargs
             Context for the value being loaded
 
         Returns
@@ -176,7 +176,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             engine.bind()
             assert engine.dump(typedef, "Jill::account") == "Jill"
 
-        '''
+        """
         try:
             bound_type = self.bound_types[typedef]
         except KeyError:
@@ -184,10 +184,10 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 "Can't load unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
-            return bound_type["load"](value, context=context, **kwargs)
+            return bound_type["load"](value, **kwargs)
 
-    def dump(self, typedef, value, *, context=None, **kwargs):
-        '''
+    def dump(self, typedef, value, **kwargs):
+        """
         Return the result of the bound dump method for a typedef
 
         Looks up the dump function that was bound to the engine for a typedef,
@@ -200,7 +200,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             The typedef whose bound dump method should be used
         value : object
             The value to be passed into the bound dump method
-        context : dict
+        **kwargs : kwargs
             Context for the value being dumped
 
         Returns
@@ -232,7 +232,7 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
             engine.bind()
             assert engine.load(typedef, "Jill") == "Jill::account"
 
-        '''
+        """
         try:
             bound_type = self.bound_types[typedef]
         except KeyError:
@@ -240,16 +240,16 @@ class TypeEngine(object, metaclass=TypeEngineMeta):
                 "Can't dump unknown type {}".format(typedef))
         else:
             # Don't need to try/catch since load/dump are bound together
-            return bound_type["dump"](value, context=context, **kwargs)
+            return bound_type["dump"](value, **kwargs)
 
-    def is_compatible(sef, typedef):  # pragma: no cover
-        '''
+    def is_compatible(self, typedef):  # pragma: no cover
+        """
         Returns ``true`` if the typedef is compatible with this engine.
 
         This function should return ``False`` otherwise.  The default
         implementation will always return ``True``.
 
-        '''
+        """
         return True
 
     def __contains__(self, typedef):
@@ -260,7 +260,7 @@ _fixed_engines["global"] = TypeEngine("global")
 
 
 class TypeDefinition:
-    '''
+    """
     Translates between python types and backend/storage/transport types
 
     A single TypeDefinition can be used for multiple TypeEngines, by
@@ -271,12 +271,12 @@ class TypeDefinition:
     just implement :meth:`~TypeDefinition._load` and
     :meth:`~TypeDefinition._dump`.
 
-    '''
+    """
     python_type = None
     backing_type = None
 
     def bind(self, engine, **config):
-        '''
+        """
         Return a pair of (load, dump) functions for a specific engine.
 
         Some Types will load and dump values depending on certain config, or
@@ -299,17 +299,15 @@ class TypeDefinition:
         -------
         (load, dump) : (func, func) tuple
             Each function takes a value and context, and returns a single value
-        '''
+        """
         return self._load, self._dump
 
     def _register(self, engine):
-        '''
-        Called when the type is registered with an engine.
-        '''
+        """Called when the type is registered with an engine."""
         pass
 
-    def _load(self, value, *, context=None, **kwargs):
-        '''
+    def _load(self, value, **kwargs):
+        """
         Engine-agnostic load function.  Implement this method for any
         TypeDefinition whose load function does not depend on the TypeEngine
         being used to load it.
@@ -321,11 +319,11 @@ class TypeDefinition:
 
         By default, returns :attr:`value` unchanged.
 
-        '''
+        """
         return value
 
-    def _dump(self, value, *, context=None, **kwargs):
-        '''
+    def _dump(self, value, **kwargs):
+        """
         Engine-agnostic dump function.  Implement this method for any
         TypeDefinition whose dump function does not depend on the TypeEngine
         being used to dump it.
@@ -337,12 +335,12 @@ class TypeDefinition:
 
         By default, returns :attr:`value` unchanged.
 
-        '''
+        """
         return value
 
 
 def subclassof(obj, classinfo):
-    ''' Wrap issubclass to only return True/False '''
+    """Wrap issubclass to only return True/False"""
     try:
         return issubclass(obj, classinfo)
     except TypeError:
@@ -350,7 +348,7 @@ def subclassof(obj, classinfo):
 
 
 def instanceof(obj, classinfo):
-    ''' Wrap isinstance to only return True/False '''
+    """Wrap isinstance to only return True/False"""
     try:
         return isinstance(obj, classinfo)
     except TypeError:  # pragma: no cover
@@ -377,7 +375,7 @@ class Field:
 
     @property
     def model_name(self):
-        ''' Name of the model's attr that references self '''
+        """Name of the model's attr that references self"""
         return self._model_name
 
     @model_name.setter
@@ -427,7 +425,7 @@ class Field:
 
 
 def index(objects, attr):
-    '''
+    """
     Generate a mapping of a list of objects indexed by the given attr.
 
     Parameters
@@ -462,22 +460,22 @@ def index(objects, attr):
     assert by_name['one'] is people[0]
     assert by_email['two@people.com'] is people[1]
 
-    '''
+    """
     return {getattr(obj, attr): obj for obj in objects}
 
 
 class ModelMetaclass(type, TypeDefinition):
-    '''
+    """
     Track the order that ``Field`` attributes are declared, and
     insert a Meta object (class) in the class
-    '''
+    """
     @classmethod
-    def __prepare__(metaclass, name, bases):
-        ''' Returns an OrderedDict so attribute order is preserved '''
+    def __prepare__(mcs, name, bases):
+        """Returns an OrderedDict so attribute order is preserved"""
         return collections.OrderedDict()
 
-    def __new__(metaclass, name, bases, attrs):
-        ''' Add a container class `Meta` to the class '''
+    def __new__(mcs, name, bases, attrs):
+        """Add a container class `Meta` to the class"""
 
         Meta = attrs.get('Meta', missing)
         if Meta is missing:
@@ -487,7 +485,7 @@ class ModelMetaclass(type, TypeDefinition):
         if not isinstance(Meta, type):
             raise TypeError("Expected `Meta` to be a class object")
 
-        cls = super().__new__(metaclass, name, bases, attrs)
+        cls = super().__new__(mcs, name, bases, attrs)
 
         # Load and index fields by name
         # ----------------------------------------------------------
