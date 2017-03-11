@@ -5,6 +5,8 @@ from declare import Field, TypeDefinition
 class Container(object):
     ''' Subclass object so instances have a __dict__ '''
     field = Field()
+
+
 Container.field.model_name = 'field'
 
 
