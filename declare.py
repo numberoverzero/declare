@@ -1,9 +1,10 @@
 """Declarative scaffolding for frameworks"""
 import collections
 import uuid
+import warnings
 __all__ = ["ModelMetaclass", "Field", "TypeDefinition",
            "TypeEngine", "DeclareException"]
-__version__ = "0.9.11"
+__version__ = "0.9.12"
 
 missing = object()
 # These engines can't be cleared
@@ -461,7 +462,9 @@ def index(objects, attr):
     assert by_email['two@people.com'] is people[1]
 
     """
-    return {getattr(obj, attr): obj for obj in objects}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return {getattr(obj, attr): obj for obj in objects}
 
 
 class ModelMetaclass(type, TypeDefinition):
@@ -495,7 +498,9 @@ class ModelMetaclass(type, TypeDefinition):
                 fields.append(attr)
                 # This will raise AttributeError if the field's
                 # name is already set
-                attr.model_name = name
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    attr.model_name = name
         Meta.fields_by_model_name = index(fields, 'model_name')
         Meta.fields = fields
 
